@@ -73,29 +73,20 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if os.environ.get('USE_REMOTE_MSSQL') == '1':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'mssql',
-            'NAME': 'CO3103',
-            'USER': 'dev.CO3103',
-            'PASSWORD': '123',
-            'HOST': '100.124.66.125',
-            'PORT': '1433',
-            'OPTIONS': {
-                'driver': 'ODBC Driver 18 for SQL Server',
-                'extra_params': 'Encrypt=yes;TrustServerCertificate=yes;',
-            },
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'mssql',
+        'NAME': 'CO3103',
+        'USER': 'dev.CO3103',
+        'PASSWORD': '123',
+        'HOST': '100.124.66.125',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 18 for SQL Server',
+            'extra_params': 'Encrypt=yes;TrustServerCertificate=yes;',
+        },
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': str(BASE_DIR / 'db.sqlite3'),
-        }
-    }
-
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
