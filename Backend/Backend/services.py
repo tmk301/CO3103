@@ -1,6 +1,7 @@
 from django.db import IntegrityError, transaction, connection
 from django.utils import timezone
-
+from django.contrib.auth.hashers import make_password
+from .models import AuthUser, AuthAccount
 
 def create_user_account(
     email: str,
@@ -9,14 +10,7 @@ def create_user_account(
     username: str,
     password: str,
     status: int = 0,
-    auth_user_model=None,
-    auth_account_model=None,
 ) -> dict:
-    """Internal implementation used by both CreateUserAccount and create_user_account.
-
-    If auth_user_model/auth_account_model are provided, use the ORM path.
-    Otherwise call the stored procedure directly via a DB cursor.
-    """
     email = (email or "").strip()
     username = (username or "").strip()
 
@@ -26,13 +20,6 @@ def create_user_account(
         return {"success": False, "message": "Username is required."}
 
     try:
-        # If models were injected (for tests), use them; otherwise import the project's models.
-        if auth_user_model is not None and auth_account_model is not None:
-            AuthUser = auth_user_model
-            AuthAccount = auth_account_model
-        else:
-            # Import lazily so importing this module doesn't force model registration at import time
-            from .models import AuthUser, AuthAccount
 
         with transaction.atomic():
             if AuthUser.objects.filter(email=email, is_deleted=False).exists():
@@ -52,10 +39,12 @@ def create_user_account(
                 created_at=now,
             )
 
+            hashed = make_password(password)
+
             account = AuthAccount.objects.create(
                 user=user,
                 username=username,
-                password_hash=password,
+                password_hash=hashed,
                 is_deleted=False,
                 created_at=now,
             )
@@ -69,5 +58,83 @@ def create_user_account(
 
     except IntegrityError as e:
         return {"success": False, "message": str(e)}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+def get_info_by_email(email: str) -> dict:
+    """Return user+account info for a given email.
+
+    Fields returned (keys may be None if account is missing):
+      - user_id, account_id, username, password_hash, email,
+        first_name, last_name, status, is_deleted
+    """
+    email = (email or "").strip()
+
+    if not email:
+        return {"success": False, "message": "Email is required."}
+
+    try:
+        user = AuthUser.objects.filter(email=email, is_deleted=False).first()
+        if not user:
+            return {"success": False, "message": "User not found.", "code": 50003}
+
+        account = AuthAccount.objects.filter(user=user, is_deleted=False).first()
+
+        return {
+            "success": True,
+            "message": "Info retrieved successfully.",
+            "data": {
+                "user_id": getattr(user, 'user_id', None) or getattr(user, 'id', None),
+                "account_id": getattr(account, 'account_id', None) or getattr(account, 'id', None) if account else None,
+                "username": account.username if account else None,
+                "password_hash": account.password_hash if account else None,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "status": user.status,
+                "is_deleted": user.is_deleted,
+            },
+        }
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+def get_info_by_username(username: str) -> dict:
+    """Return user+account info for a given username.
+
+    Fields returned (same as get_info_by_email). If the user is marked deleted
+    or missing, returns an error.
+    """
+    username = (username or "").strip()
+
+    if not username:
+        return {"success": False, "message": "Username is required."}
+
+    try:
+        account = AuthAccount.objects.filter(username=username, is_deleted=False).first()
+        if not account:
+            return {"success": False, "message": "Account not found.", "code": 50004}
+
+        user = account.user
+        if not user or getattr(user, 'is_deleted', False):
+            return {"success": False, "message": "User not found or deleted.", "code": 50003}
+
+        return {
+            "success": True,
+            "message": "Info retrieved successfully.",
+            "data": {
+                "user_id": getattr(user, 'user_id', None) or getattr(user, 'id', None),
+                "account_id": getattr(account, 'account_id', None) or getattr(account, 'id', None),
+                "username": account.username,
+                "password_hash": account.password_hash,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "status": user.status,
+                "is_deleted": user.is_deleted,
+            },
+        }
+
     except Exception as e:
         return {"success": False, "message": str(e)}
