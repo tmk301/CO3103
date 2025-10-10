@@ -63,6 +63,7 @@ db.sqlite3
 local_settings.py
 .env
 .env.*
+!.env.example
 
 # Sentry CLI
 .sentryclirc
