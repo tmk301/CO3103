@@ -1,8 +1,10 @@
 import { useState } from "react";
 import "./App.css";
 
+const trimSlash = (s = "") => s.replace(/\/+$/, ""); // bỏ dấu / cuối base URL  nếu có
+
 function App() {
-  const [page, setPage] = useState("login"); // "login" hoặc "register"
+  const [page, setPage] = useState("login"); // "login" | "register"
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -12,15 +14,29 @@ function App() {
     email: "",
   });
 
+  const API_BASE = trimSlash(import.meta.env.VITE_API_BASE_URL || "");
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.password || (page === "register" && (!form.first_name || !form.last_name || !form.email))) {
+    // Validate cơ bản
+    if (!form.username || !form.password) {
       alert("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+    if (
+      page === "register" &&
+      (!form.first_name || !form.last_name || !form.email)
+    ) {
+      alert("Vui lòng nhập đầy đủ thông tin đăng ký!");
+      return;
+    }
+    if (page === "register" && form.password !== form.confirmPassword) {
+      alert("Mật khẩu xác nhận không khớp!");
       return;
     }
 
@@ -36,51 +52,57 @@ function App() {
             email: form.email,
           };
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
-  const url = API_BASE + (page === "login" ? "/api/login/" : "/api/register/");
+    // Tạo URL endpoint
+    const endpoint = page === "login" ? "/api/login/" : "/api/register/";
+    const url = `${API_BASE}${endpoint}`;
 
-    if (page === "register" && form.password !== form.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText || `${page === "login" ? "Login" : "Register"} failed`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (page === "login") {
-          if (data.token) {
-            localStorage.setItem("token", data.token);
-            alert("Đăng nhập thành công!");
-          } else {
-            alert("Đăng nhập thành công (không có token trả về)");
-          }
-        } else {
-          alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
-          setPage("login");
-          setForm({
-            username: "",
-            password: "",
-            confirmPassword: "",
-            first_name: "",
-            last_name: "",
-            email: "",
-          });
-        }
-      })
-      .catch((err) => {
-        console.error(`${page} error:`, err);
-        alert(`${page === "login" ? "Đăng nhập" : "Đăng ký"} thất bại: ` + err.message);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        // Nếu backend dùng session/cookie thì bật dòng sau:
+        // credentials: "include",
+        body: JSON.stringify(payload),
       });
+
+      const isJSON = res.headers
+        .get("content-type")
+        ?.toLowerCase()
+        .includes("application/json");
+
+      const data = isJSON ? await res.json() : await res.text();
+
+      if (!res.ok) {
+        const msg =
+          (isJSON && (data?.detail || data?.message)) ||
+          (typeof data === "string" ? data : "") ||
+          `${page === "login" ? "Login" : "Register"} failed`;
+        throw new Error(msg);
+      }
+
+      if (page === "login") {
+        if (data?.token) {
+          localStorage.setItem("token", data.token);
+          alert("Đăng nhập thành công!");
+        } else {
+          alert("Đăng nhập thành công (không có token trả về).");
+        }
+      } else {
+        alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
+        setPage("login");
+        setForm({
+          username: "",
+          password: "",
+          confirmPassword: "",
+          first_name: "",
+          last_name: "",
+          email: "",
+        });
+      }
+    } catch (err) {
+      console.error(`${page} error:`, err);
+      alert(`${page === "login" ? "Đăng nhập" : "Đăng ký"} thất bại: ${err.message}`);
+    }
   };
 
   return (
