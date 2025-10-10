@@ -117,3 +117,4 @@ celerybeat.pid
 # Misc
 *.log
 *.pot
+.vercel
