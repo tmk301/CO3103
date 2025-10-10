@@ -21,30 +21,62 @@ function App() {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
+    // Use backend API instead of local-only mock
+    const payload = { username: form.username, password: form.password };
 
     if (page === "login") {
-      const userExists = users.find(
-        (u) => u.username === form.username && u.password === form.password
-      );
-      if (userExists) {
-        alert("Đăng nhập thành công!");
-      } else {
-        alert("Tên đăng nhập hoặc mật khẩu không đúng!");
-      }
+      fetch('/api/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || 'Login failed');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          // Assumption: backend returns { token: '...' } on success
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            alert('Đăng nhập thành công!');
+          } else {
+            alert('Đăng nhập thành công (không có token trả về)');
+          }
+        })
+        .catch((err) => {
+          console.error('Login error:', err);
+          alert('Đăng nhập thất bại: ' + err.message);
+        });
     } else {
       if (form.password !== form.confirmPassword) {
         alert("Mật khẩu xác nhận không khớp!");
         return;
       }
-      const userExists = users.find((u) => u.username === form.username);
-      if (userExists) {
-        alert("Tên đăng nhập đã tồn tại!");
-        return;
-      }
-      setUsers([...users, { username: form.username, password: form.password }]);
-      alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
-      setPage("login");
-      setForm({ username: "", password: "", confirmPassword: "" });
+
+      fetch('/api/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || 'Register failed');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          alert('Đăng ký thành công! Bạn có thể đăng nhập ngay.');
+          setPage('login');
+          setForm({ username: '', password: '', confirmPassword: '' });
+        })
+        .catch((err) => {
+          console.error('Register error:', err);
+          alert('Đăng ký thất bại: ' + err.message);
+        });
     }
   };
 
