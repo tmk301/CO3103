@@ -36,7 +36,8 @@ function App() {
             email: form.email,
           };
 
-    const url = page === "login" ? "/api/login/" : "/api/register/";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+  const url = API_BASE + (page === "login" ? "/api/login/" : "/api/register/");
 
     if (page === "register" && form.password !== form.confirmPassword) {
       alert("Mật khẩu xác nhận không khớp!");

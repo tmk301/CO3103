@@ -42,3 +42,20 @@ Serve the production build locally (optional):
 ```powershell
 npm run preview
 ```
+
+## Environment: backend URL
+
+This frontend can use an environment variable `VITE_API_BASE_URL` to call the backend in production.
+
+- Development example (PowerShell):
+
+```powershell
+$env:VITE_API_BASE_URL="http://localhost:8000"
+npm run dev
+```
+
+- In Vercel: go to Project Settings → Environment Variables and add:
+	- Key: `VITE_API_BASE_URL`
+	- Value: `https://your-backend.example.com`
+
+If `VITE_API_BASE_URL` is empty the app will still call relative paths (e.g. `/api/login/`).
