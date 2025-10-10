@@ -1,6 +1,6 @@
 from django.db import IntegrityError, transaction, connection
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from .models import AuthUser, AuthAccount
 
 def create_user_account(
@@ -138,3 +138,49 @@ def get_info_by_username(username: str) -> dict:
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+    
+def log_in(username: str = None, email: str = None, password: str = None) -> dict:
+    username = (username or "").strip()
+    email = (email or "").strip()
+
+    if not username and not email:
+        return {"success": False, "message": "Username or email is required."}
+
+    try:
+        if username:
+            result = get_info_by_username(username)
+            if not result.get("success"):
+                return result
+        else:
+            result = get_info_by_email(email)
+            if not result.get("success"):
+                return result
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+    info = result.get("data", {})
+    password_hash = info.get("password_hash")
+    if not password_hash:
+        return {"success": False, "message": "Password not set for account.", "code": 50005}
+
+    try:
+        valid = check_password(password or "", password_hash)
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+    if not valid:
+        return {"success": False, "message": "Invalid credentials.", "code": 50006}
+
+    return {
+        "success": True,
+        "message": "Login successful.",
+        "data": {
+            "user_id": info.get("user_id"),
+            "account_id": info.get("account_id"),
+            "username": info.get("username"),
+            "email": info.get("email"),
+            "first_name": info.get("first_name"),
+            "last_name": info.get("last_name"),
+            "status": info.get("status"),
+        },
+    }
