@@ -7,8 +7,10 @@ function App() {
     username: "",
     password: "",
     confirmPassword: "",
+    first_name: "",
+    last_name: "",
+    email: "",
   });
-  const [users, setUsers] = useState([]); // lưu tạm danh sách tài khoản
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,82 +19,76 @@ function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.password) {
+    if (!form.username || !form.password || (page === "register" && (!form.first_name || !form.last_name || !form.email))) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-    // Use backend API instead of local-only mock
-    const payload = { username: form.username, password: form.password };
 
-    if (page === "login") {
-      fetch('/api/login/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || 'Login failed');
-          }
-          return res.json();
-        })
-        .then((data) => {
-          // Assumption: backend returns { token: '...' } on success
-          if (data.token) {
-            localStorage.setItem('token', data.token);
-            alert('Đăng nhập thành công!');
-          } else {
-            alert('Đăng nhập thành công (không có token trả về)');
-          }
-        })
-        .catch((err) => {
-          console.error('Login error:', err);
-          alert('Đăng nhập thất bại: ' + err.message);
-        });
-    } else {
-      if (form.password !== form.confirmPassword) {
-        alert("Mật khẩu xác nhận không khớp!");
-        return;
-      }
+    const payload =
+      page === "login"
+        ? { username: form.username, password: form.password, email: form.email }
+        : {
+            username: form.username,
+            password: form.password,
+            confirm_password: form.confirmPassword,
+            first_name: form.first_name,
+            last_name: form.last_name,
+            email: form.email,
+          };
 
-      fetch('/api/register/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || 'Register failed');
-          }
-          return res.json();
-        })
-        .then((data) => {
-          alert('Đăng ký thành công! Bạn có thể đăng nhập ngay.');
-          setPage('login');
-          setForm({ username: '', password: '', confirmPassword: '' });
-        })
-        .catch((err) => {
-          console.error('Register error:', err);
-          alert('Đăng ký thất bại: ' + err.message);
-        });
+    const url = page === "login" ? "/api/login/" : "/api/register/";
+
+    if (page === "register" && form.password !== form.confirmPassword) {
+      alert("Mật khẩu xác nhận không khớp!");
+      return;
     }
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || `${page === "login" ? "Login" : "Register"} failed`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (page === "login") {
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            alert("Đăng nhập thành công!");
+          } else {
+            alert("Đăng nhập thành công (không có token trả về)");
+          }
+        } else {
+          alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
+          setPage("login");
+          setForm({
+            username: "",
+            password: "",
+            confirmPassword: "",
+            first_name: "",
+            last_name: "",
+            email: "",
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(`${page} error:`, err);
+        alert(`${page === "login" ? "Đăng nhập" : "Đăng ký"} thất bại: ` + err.message);
+      });
   };
 
   return (
     <div className="login-container">
       <div className="button-switch">
-        <button
-          className={page === "login" ? "active" : ""}
-          onClick={() => setPage("login")}
-        >
+        <button className={page === "login" ? "active" : ""} onClick={() => setPage("login")}>
           Đăng nhập
         </button>
-        <button
-          className={page === "register" ? "active" : ""}
-          onClick={() => setPage("register")}
-        >
+        <button className={page === "register" ? "active" : ""} onClick={() => setPage("register")}>
           Đăng ký
         </button>
       </div>
@@ -100,6 +96,34 @@ function App() {
       <h2>{page === "login" ? "Đăng nhập" : "Đăng ký tài khoản"}</h2>
 
       <form className="login-form" onSubmit={handleSubmit}>
+        {page === "register" && (
+          <>
+            <input
+              type="text"
+              name="first_name"
+              placeholder="First Name"
+              value={form.first_name}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="text"
+              name="last_name"
+              placeholder="Last Name"
+              value={form.last_name}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+          </>
+        )}
         <input
           type="text"
           name="username"
