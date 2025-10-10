@@ -118,3 +118,6 @@ celerybeat.pid
 # Misc
 *.log
 *.pot
+
+# Testing
+tests/
