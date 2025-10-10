@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from Backend import api_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Simple API endpoints for frontend dev
+    path('api/register/', api_views.register, name='api-register'),
+    path('api/login/', api_views.login, name='api-login'),
 ]

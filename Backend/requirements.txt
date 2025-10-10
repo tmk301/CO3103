@@ -3,3 +3,4 @@ mssql-django==1.1.0
 pyodbc>=4.0.0
 # On Windows install Microsoft ODBC Driver for SQL Server separately:
 # https://learn.microsoft.com/sql/connect/odbc/windows/microsoft-odbc-driver-for-sql-server
+django-cors-headers>=4.0.0
