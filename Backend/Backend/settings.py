@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).resolve().parent.parent / '.env'
+    if _env_path.exists():
+        load_dotenv(_env_path)
+except Exception:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -79,15 +87,16 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'CO3103',
-        'USER': 'dev.CO3103',
-        'PASSWORD': '123',
-        'HOST': '100.124.66.125',
-        'PORT': '1433',
+        'ENGINE': os.environ.get('DB_ENGINE', 'mssql'),
+        'NAME': os.environ.get('DB_NAME', ''),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', ''),
         'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'extra_params': 'Encrypt=yes;TrustServerCertificate=yes;',
+            'driver': os.environ.get('DB_DRIVER', 'ODBC Driver 18 for SQL Server'),
+            # Allow passing extra connection params via env if needed (e.g. Encrypt/TrustServerCertificate)
+            'extra_params': os.environ.get('DB_EXTRA_PARAMS', 'Encrypt=yes;TrustServerCertificate=yes;'),
         },
     }
 }
