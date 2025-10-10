@@ -1,6 +1,17 @@
+asgiref==3.10.0
+certifi==2025.10.5
+charset-normalizer==3.4.3
 Django==5.2.7
-mssql-django==1.1.0
-pyodbc>=4.0.0
-# On Windows install Microsoft ODBC Driver for SQL Server separately:
-# https://learn.microsoft.com/sql/connect/odbc/windows/microsoft-odbc-driver-for-sql-server
-django-cors-headers>=4.0.0
+django-cors-headers==4.9.0
+docopt==0.6.2
+idna==3.10
+mssql-django==1.6
+pipreqs==0.4.13
+pyodbc==5.2.0
+python-dotenv==1.1.1
+pytz==2025.2
+requests==2.32.5
+sqlparse==0.5.3
+tzdata==2025.2
+urllib3==2.5.0
+yarg==0.1.10
