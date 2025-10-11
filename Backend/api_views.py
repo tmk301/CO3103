@@ -66,3 +66,31 @@ def login(request):
         pass
 
     return JsonResponse({'detail': result.get('message'), 'data': data})
+
+
+@csrf_exempt
+@require_POST
+def change_password(request):
+    try:
+        payload = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    username = payload.get('username')
+    email = payload.get('email', '')
+    old_password = payload.get('old_password')
+    new_password = payload.get('new_password')
+
+    if not (username or email) or not old_password or not new_password:
+        return JsonResponse({'detail': 'username/email, old_password and new_password required'}, status=400)
+
+    result = services.change_password(
+        username=username,
+        email=email,
+        old_password=old_password,
+        new_password=new_password,
+    )
+    if not result.get('success'):
+        return JsonResponse({'detail': result.get('message')}, status=400)
+
+    return JsonResponse({'detail': result.get('message')})
