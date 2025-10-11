@@ -1,204 +1,223 @@
-// src/App.jsx
 import { useState } from "react";
 import "./App.css";
-import Dashboard from "./Dashboard";
+
+const API_BASE = "http://127.0.0.1:8000"; // backend của bạn
 
 function App() {
-  const [page, setPage] = useState("login"); // "login" hoặc "register"
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-    confirmPassword: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-  });
+  const [page, setPage] = useState("login");
   const [user, setUser] = useState(null);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Kiểm tra nhập đủ
-    if (
-      !form.username ||
-      !form.password ||
-      (page === "register" &&
-        (!form.first_name || !form.last_name || !form.email))
-    ) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
-
-    // Kiểm tra khớp mật khẩu
-    if (page === "register" && form.password !== form.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-
-    const payload =
-      page === "login"
-        ? { username: form.username, password: form.password }
-        : {
-            username: form.username,
-            password: form.password,
-            confirm_password: form.confirmPassword,
-            first_name: form.first_name,
-            last_name: form.last_name,
-            email: form.email,
-          };
-
-    const url = page === "login" ? "/api/login/" : "/api/register/";
-
-    fetch(url, {
+  // Hàm gọi API backend
+  const callAPI = async (endpoint, body) => {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error((await res.text()) || "Lỗi server");
-        return res.json();
-      })
-      .then((data) => {
-        if (page === "login") {
-          if (data.token) localStorage.setItem("token", data.token);
-          setUser({
-            username: form.username,
-            first_name: form.first_name,
-            last_name: form.last_name,
-          });
-          alert("Đăng nhập thành công!");
-        } else {
-          alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
-          setPage("login");
-          setForm({
-            username: "",
-            password: "",
-            confirmPassword: "",
-            first_name: "",
-            last_name: "",
-            email: "",
-          });
-        }
-      })
-      .catch((err) =>
-        alert(
-          `${page === "login" ? "Đăng nhập" : "Đăng ký"} thất bại: ` +
-            err.message
-        )
-      );
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Lỗi máy chủ");
+    return data;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setPage("login");
-  };
+  // ========== FORM LOGIN ==========
+  const LoginForm = () => {
+    const [form, setForm] = useState({ username: "", password: "" });
 
-  // Nếu đã đăng nhập → hiển thị dashboard
-  if (user) return <Dashboard user={user} onLogout={handleLogout} />;
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const data = await callAPI("/api/login/", form);
+        alert("Đăng nhập thành công!");
+        setUser(data.data);
+      } catch (err) {
+        alert(err.message);
+      }
+    };
 
-  // Nếu chưa đăng nhập → hiển thị form
-  return (
-    <div className="login-container">
-      <div className="button-switch">
-        <button
-          className={page === "login" ? "active" : ""}
-          onClick={() => setPage("login")}
-        >
-          Đăng nhập
-        </button>
-        <button
-          className={page === "register" ? "active" : ""}
-          onClick={() => setPage("register")}
-        >
-          Đăng ký
-        </button>
-      </div>
-
-      <h2>{page === "login" ? "Đăng nhập" : "Đăng ký tài khoản"}</h2>
-
-      <form className="login-form" onSubmit={handleSubmit}>
-        {page === "register" && (
-          <>
-            <input
-              type="text"
-              name="first_name"
-              placeholder="Nhập họ"
-              value={form.first_name}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="last_name"
-              placeholder="Nhập tên"
-              value={form.last_name}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Nhập địa chỉ email"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="username"
-              placeholder="Nhập tên đăng nhập"
-              value={form.username}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Nhập mật khẩu"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Xác nhận lại mật khẩu"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
-
-        {page === "login" && (
-          <>
-            <input
-              type="text"
-              name="username"
-              placeholder="Tên đăng nhập"
-              value={form.username}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Mật khẩu"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
-
-        <button type="submit">
-          {page === "login" ? "Đăng nhập" : "Đăng ký"}
-        </button>
+    return (
+      <form className="form" onSubmit={handleSubmit}>
+        <h2>Đăng nhập</h2>
+        <input
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={form.username}
+          onChange={(e) => setForm({ ...form, username: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
+        />
+        <button type="submit">Đăng nhập</button>
       </form>
+    );
+  };
+
+  // ========== FORM ĐĂNG KÝ ==========
+  const RegisterForm = () => {
+    const [form, setForm] = useState({
+      first_name: "",
+      last_name: "",
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (form.password !== form.confirmPassword)
+        return alert("Mật khẩu xác nhận không khớp!");
+      try {
+        await callAPI("/api/register/", form);
+        alert("Đăng ký thành công! Mời đăng nhập.");
+        setPage("login");
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    return (
+      <form className="form" onSubmit={handleSubmit}>
+        <h2>Đăng ký</h2>
+        <input
+          type="text"
+          placeholder="Họ"
+          value={form.first_name}
+          onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Tên"
+          value={form.last_name}
+          onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={form.username}
+          onChange={(e) => setForm({ ...form, username: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Xác nhận mật khẩu"
+          value={form.confirmPassword}
+          onChange={(e) =>
+            setForm({ ...form, confirmPassword: e.target.value })
+          }
+          required
+        />
+        <button type="submit">Đăng ký</button>
+      </form>
+    );
+  };
+
+  // ========== FORM THAY ĐỔI MẬT KHẨU ==========
+  const ResetForm = () => {
+    const [form, setForm] = useState({
+      username: "",
+      old_password: "",
+      new_password: "",
+    });
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await callAPI("/api/reset_password/", form);
+        alert("Thay đổi mật khẩu thành công!");
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    return (
+      <form className="form" onSubmit={handleSubmit}>
+        <h2>Thay đổi mật khẩu</h2>
+        <input
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={form.username}
+          onChange={(e) => setForm({ ...form, username: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu cũ"
+          value={form.old_password}
+          onChange={(e) => setForm({ ...form, old_password: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu mới"
+          value={form.new_password}
+          onChange={(e) => setForm({ ...form, new_password: e.target.value })}
+          required
+        />
+        <button type="submit">Cập nhật</button>
+      </form>
+    );
+  };
+
+  // ========== DASHBOARD ==========
+  if (user) {
+    return (
+      <div className="dashboard">
+        <h2>Xin chào, {user.username}</h2>
+        <button onClick={() => setUser(null)}>Đăng xuất</button>
+      </div>
+    );
+  }
+
+  // ========== GIAO DIỆN CHÍNH ==========
+  return (
+    <div className="app-container">
+      <div className="card">
+        <div className="tab-buttons">
+          <button
+            className={page === "login" ? "active" : ""}
+            onClick={() => setPage("login")}
+          >
+            Đăng nhập
+          </button>
+          <button
+            className={page === "register" ? "active" : ""}
+            onClick={() => setPage("register")}
+          >
+            Đăng ký
+          </button>
+          <button
+            className={page === "reset" ? "active" : ""}
+            onClick={() => setPage("reset")}
+          >
+            Thay đổi mật khẩu
+          </button>
+        </div>
+
+        {page === "login" && <LoginForm />}
+        {page === "register" && <RegisterForm />}
+        {page === "reset" && <ResetForm />}
+      </div>
     </div>
   );
 }
