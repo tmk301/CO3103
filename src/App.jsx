@@ -1,8 +1,12 @@
 import { useState } from "react";
 import "./App.css";
 
+import SiteLogo from "./assets/Logo.png";
+import SiteBg from "./assets/Background.jpg";
+
 function App() {
-  const [page, setPage] = useState("login"); // "login" hoặc "register"
+  const [page, setPage] = useState("login");
+
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -12,15 +16,22 @@ function App() {
     email: "",
   });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.password || (page === "register" && (!form.first_name || !form.last_name || !form.email))) {
+    if (
+      !form.username ||
+      !form.password ||
+      (page === "register" && (!form.first_name || !form.last_name || !form.email))
+    ) {
       alert("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    if (page === "register" && form.password !== form.confirmPassword) {
+      alert("Mật khẩu xác nhận không khớp!");
       return;
     }
 
@@ -28,20 +39,15 @@ function App() {
       page === "login"
         ? { username: form.username, password: form.password, email: form.email }
         : {
-            username: form.username,
-            password: form.password,
-            confirm_password: form.confirmPassword,
-            first_name: form.first_name,
-            last_name: form.last_name,
-            email: form.email,
-          };
+          username: form.username,
+          password: form.password,
+          confirm_password: form.confirmPassword,
+          first_name: form.first_name,
+          last_name: form.last_name,
+          email: form.email,
+        };
 
     const url = page === "login" ? "/api/login/" : "/api/register/";
-
-    if (page === "register" && form.password !== form.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
 
     fetch(url, {
       method: "POST",
@@ -83,37 +89,83 @@ function App() {
   };
 
   return (
-    <div className="login-container">
-      <div className="button-switch">
-        <button className={page === "login" ? "active" : ""} onClick={() => setPage("login")}>
-          Đăng nhập
-        </button>
-        <button className={page === "register" ? "active" : ""} onClick={() => setPage("register")}>
-          Đăng ký
-        </button>
-      </div>
-
-      <h2>{page === "login" ? "Đăng nhập" : "Đăng ký tài khoản"}</h2>
-
-      <form className="login-form" onSubmit={handleSubmit}>
-        {page === "register" && (
-          <>
+    <div
+      className="page"
+      style={{
+        backgroundImage: `url(${SiteBg})`,
+      }}>
+      <section className="brand">
+        <div className="brand-row">
+          <img src={SiteLogo} alt="Synapse logo" className="brand-logo" />
+          <h1 className="brand-name">Synapse</h1>
+        </div>
+        <p className="brand-tagline">
+          Synapse giúp bạn quản lý thông báo hộp thư và tăng hiệu suất công việc.
+        </p>
+      </section>
+      {page === "login" ? (
+        <section className="auth-card" aria-label="Đăng nhập">
+          <form onSubmit={handleSubmit} className="auth-form">
+            {/* 2 ô nhập nằm trên cùng */}
             <input
               type="text"
-              name="first_name"
-              placeholder="First Name"
-              value={form.first_name}
+              name="username"
+              placeholder="Tên đăng nhập"
+              value={form.username}
               onChange={handleChange}
               required
             />
             <input
-              type="text"
-              name="last_name"
-              placeholder="Last Name"
-              value={form.last_name}
+              type="password"
+              name="password"
+              placeholder="Mật khẩu"
+              value={form.password}
               onChange={handleChange}
               required
             />
+
+            {/* Nút đăng nhập xanh dương đậm */}
+            <button type="submit" className="btn btn-primary">
+              Đăng nhập
+            </button>
+
+            {/* Link Quên mật khẩu? */}
+            <a className="link-forgot" href="#">
+              Quên mật khẩu?
+            </a>
+
+            {/* Nút tạo tài khoản xanh lục đậm (mở giao diện register) */}
+            <button
+              type="button"
+              className="btn btn-success"
+              onClick={() => setPage("register")}
+            >
+              Tạo tài khoản mới
+            </button>
+          </form>
+        </section>
+      ) : (
+        <section className="auth-card" aria-label="Đăng ký">
+          <h3 className="register-title">Tạo tài khoản mới</h3>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="name-row">
+              <input
+                type="text"
+                name="first_name"
+                placeholder="Tên"
+                value={form.first_name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="text"
+                name="last_name"
+                placeholder="Họ"
+                value={form.last_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
             <input
               type="email"
               name="email"
@@ -122,36 +174,44 @@ function App() {
               onChange={handleChange}
               required
             />
-          </>
-        )}
-        <input
-          type="text"
-          name="username"
-          placeholder="Tên đăng nhập"
-          value={form.username}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Mật khẩu"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-        {page === "register" && (
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="Xác nhận mật khẩu"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        )}
-        <button type="submit">{page === "login" ? "Đăng nhập" : "Đăng ký"}</button>
-      </form>
+            <input
+              type="text"
+              name="username"
+              placeholder="Tên đăng nhập"
+              value={form.username}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Mật khẩu"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Xác nhận mật khẩu"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+
+            <button type="submit" className="btn btn-success">
+              Đăng ký
+            </button>
+            <button
+              type="button"
+              className="btn btn-text"
+              onClick={() => setPage("login")}
+            >
+              Đã có tài khoản? Đăng nhập
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
