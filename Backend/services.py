@@ -11,6 +11,8 @@ def create_user_account(
     password: str,
     status: int = 0,
 ) -> dict:
+    """API to create a new account.
+    """
     email = (email or "").strip()
     username = (username or "").strip()
 
@@ -62,11 +64,7 @@ def create_user_account(
         return {"success": False, "message": str(e)}
 
 def get_info_by_email(email: str) -> dict:
-    """Return user+account info for a given email.
-
-    Fields returned (keys may be None if account is missing):
-      - user_id, account_id, username, password_hash, email,
-        first_name, last_name, status, is_deleted
+    """Helper function to get info by email.
     """
     email = (email or "").strip()
 
@@ -101,10 +99,7 @@ def get_info_by_email(email: str) -> dict:
 
 
 def get_info_by_username(username: str) -> dict:
-    """Return user+account info for a given username.
-
-    Fields returned (same as get_info_by_email). If the user is marked deleted
-    or missing, returns an error.
+    """Helper function to get info by username.
     """
     username = (username or "").strip()
 
@@ -186,6 +181,7 @@ def log_in(username: str = None, email: str = None, password: str = None) -> dic
     }
 
 def change_password(username: str = None, email: str = None, old_password: str = None, new_password: str = None) -> dict:
+    """API to change password."""
     username = (username or "").strip()
     email = (email or "").strip()
 
