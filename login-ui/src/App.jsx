@@ -1,13 +1,11 @@
 import { useState } from "react";
 import "./App.css";
 
-const API_BASE = "http://127.0.0.1:8000"; // backend của bạn
+const API_BASE = "http://127.0.0.1:8000";
 
 function App() {
   const [page, setPage] = useState("login");
   const [user, setUser] = useState(null);
-
-  // Hàm gọi API backend
   const callAPI = async (endpoint, body) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method: "POST",
@@ -18,8 +16,6 @@ function App() {
     if (!res.ok) throw new Error(data.detail || "Lỗi máy chủ");
     return data;
   };
-
-  // ========== FORM LOGIN ==========
   const LoginForm = () => {
     const [form, setForm] = useState({ username: "", password: "" });
 
@@ -56,7 +52,7 @@ function App() {
     );
   };
 
-  // ========== FORM ĐĂNG KÝ ==========
+  // FORM ĐĂNG KÝ 
   const RegisterForm = () => {
     const [form, setForm] = useState({
       first_name: "",
@@ -131,8 +127,6 @@ function App() {
       </form>
     );
   };
-
-  // ========== FORM THAY ĐỔI MẬT KHẨU ==========
   const ResetForm = () => {
     const [form, setForm] = useState({
       username: "",
@@ -178,8 +172,6 @@ function App() {
       </form>
     );
   };
-
-  // ========== DASHBOARD ==========
   if (user) {
     return (
       <div className="dashboard">
@@ -188,8 +180,6 @@ function App() {
       </div>
     );
   }
-
-  // ========== GIAO DIỆN CHÍNH ==========
   return (
     <div className="app-container">
       <div className="card">
