@@ -117,7 +117,3 @@ celerybeat.pid
 # Misc
 *.log
 *.pot
-<<<<<<< HEAD
-=======
-.vercel
->>>>>>> 252e604 (main initial)
