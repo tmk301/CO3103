@@ -797,6 +797,7 @@ body {
     height: 36px;
   }
 }
+/* === TRANG ỨNG DỤNG (DASHBOARD) === */
 .app-container {
   /* Đảm bảo lấp đầy #root */
   width: 100%; 
@@ -805,7 +806,30 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* Trang Link Account */
+.link-account-page .setting-card .signin-btn {
+    display: flex; /* Cho phép căn icon bên trong nút */
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.8rem;
+    padding: 0.75rem;
+}
+.link-account-page .setting-card img {
+    /* Đảm bảo các logo có kích thước phù hợp */
+    width: 18px;
+    height: 18px;
+}
 
+/* Cập nhật style cho form row trong settings để form link account sử dụng được */
+/* Cần cho các nút Social Media trong Link Account Card hiển thị tốt hơn */
+.setting-card .login-form {
+  gap: 0.75rem;
+}
+
+/* Khắc phục màu của logo Google trong nút */
+.link-account-page .setting-card .signin-btn img[alt="Google"] {
+    filter: none; /* Icon Google thường đã có màu, không cần invert */
+}
 /* Nút Admin Panel trong Sidebar User */
 .admin-panel-btn {
   /* Định kiểu riêng để nổi bật hơn */

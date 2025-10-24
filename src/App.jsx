@@ -15,6 +15,7 @@ import {
   FiCheckCircle,
   FiMenu,
   FiLogOut,
+  FiLink,
   FiUsers, // Icon cho Admin: User Management
   FiShield, // Icon cho Admin Panel
   FiActivity, // Icon cho Dashboard Admin
@@ -43,7 +44,7 @@ let fakeAdmin = {
 function App() {
   // State điều hướng
   const [page, setPage] = useState("login"); // login | register | forgot | dashboard | admin
-  const [activeView, setActiveView] = useState("inbox"); // inbox | all | junk | filters | settings | dashboard | users | logs | admin_settings
+  const [activeView, setActiveView] = useState("inbox"); // inbox | all |link account| junk | filters | settings | dashboard | users | logs | admin_settings
 
   // State xác thực
   const [email, setEmail] = useState("");
@@ -319,18 +320,228 @@ function App() {
     </section>
   );
 
-  // Component giữ chỗ cho các trang khác (Giữ nguyên)
-  const PlaceholderPage = ({ title }) => (
+  
+  // Trang All Notifications (MỚI)
+  const AllNotificationsPage = () => (
     <section className="dashboard">
       <div className="dashboard-header">
-        <h1>{title}</h1>
+        <h1>All Notifications</h1>
+        <button className="refresh-btn">
+          <FiRefreshCw className="refresh-icon" />
+          Mark All As Read
+        </button>
       </div>
-      <div className="placeholder-content">
-        <h2>Chức năng đang được phát triển 🚧</h2>
-        <p>Nội dung cho trang '{title}' sẽ sớm có mặt.</p>
+      <div className="notifications-list">
+        <div className="notification-card">
+          <div className="notification-content">
+            <div className="notification-icon" style={{background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6'}}><FiMail /></div>
+            <div className="notification-details">
+              <h3>[Slack] New Channel Message</h3>
+              <p className="notification-source">From: #general-team</p>
+              <p className="notification-message">John: We'll launch the update at 3 PM UTC. Please confirm readiness.</p>
+            </div>
+          </div>
+          <div className="notification-actions">
+            <span className="notification-time">1 min ago</span>
+            <div className="action-buttons">
+              <button className="priority-btn" style={{background: '#06d6a0', color: 'white'}}>Archive</button>
+            </div>
+          </div>
+        </div>
+        <div className="notification-card">
+            <div className="notification-content">
+              <div className="notification-icon" style={{background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f'}}><FiAlertCircle /></div>
+              <div className="notification-details">
+                <h3>[Google] Critical Security Alert</h3>
+                <p className="notification-source">From: security-alerts@google.com</p>
+                <p className="notification-message">Suspicious login detected in Vietnam. Review and secure your account immediately.</p>
+              </div>
+            </div>
+            <div className="notification-actions">
+              <span className="notification-time">30 mins ago</span>
+              <div className="action-buttons">
+                <button className="priority-btn active">Review</button>
+              </div>
+            </div>
+          </div>
+          <div className="notification-card">
+            <div className="notification-content">
+                <div className="notification-icon" style={{background: 'rgba(255, 190, 11, 0.1)', color: '#ffbe0b'}}><FiAlertCircle /></div>
+                <div className="notification-details">
+                    <h3>[Facebook] 5 Birthday Reminders</h3>
+                    <p className="notification-source">From: Facebook Notifications</p>
+                    <p className="notification-message">5 of your friends have birthdays today. Say hi!</p>
+                </div>
+            </div>
+            <div className="notification-actions">
+                <span className="notification-time">1 hour ago</span>
+                <div className="action-buttons">
+                    <button className="priority-btn">Snooze</button>
+                </div>
+            </div>
+          </div>
       </div>
     </section>
   );
+
+  // Trang Junk & Spam (MỚI)
+  const JunkSpamPage = () => (
+    <section className="dashboard">
+      <div className="dashboard-header">
+        <h1>Junk & Spam</h1>
+        <button className="refresh-btn" style={{background: '#ef476f'}} onClick={() => alert("Đã xóa vĩnh viễn tất cả thư rác")}>
+          <FiTrash2 className="refresh-icon" />
+          Delete All
+        </button>
+      </div>
+      <div className="notifications-list">
+        <div className="notification-card" style={{borderLeftColor: '#ef476f'}}>
+            <div className="notification-content">
+                <div className="notification-icon" style={{background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f'}}><FiTrash2 /></div>
+                <div className="notification-details">
+                    <h3>**SPAM:** WIN a FREE iPhone 16!</h3>
+                    <p className="notification-source">From: rewards@fake-promo.net</p>
+                    <p className="notification-message">Congratulations! You've been selected as our lucky winner. Click to claim now!</p>
+                </div>
+            </div>
+            <div className="notification-actions">
+                <span className="notification-time">2 days ago</span>
+                <div className="action-buttons">
+                    <button className="priority-btn active" style={{background: '#06d6a0', color: 'white'}}>Not Spam</button>
+                </div>
+            </div>
+        </div>
+        <div className="notification-card">
+            <div className="notification-content">
+                <div className="notification-icon" style={{background: 'rgba(255, 190, 11, 0.1)', color: '#ffbe0b'}}><FiAlertCircle /></div>
+                <div className="notification-details">
+                    <h3>[Promo] 50% Off All Items!</h3>
+                    <p className="notification-source">From: store@marketing-deals.com</p>
+                    <p className="notification-message">Limited time offer! Use code 'FLASH50' at checkout.</p>
+                </div>
+            </div>
+            <div className="notification-actions">
+                <span className="notification-time">1 week ago</span>
+                <div className="action-buttons">
+                    <button className="priority-btn">Restore</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  // Trang Filter Settings (MỚI)
+  const FilterSettingsPage = () => (
+    <section className="dashboard">
+      <div className="dashboard-header">
+        <h1>Filter & Rule Settings</h1>
+      </div>
+      <div className="settings-container">
+        {/* Card 1: Priority Rules */}
+        <div className="setting-card">
+          <h2>Priority Rules</h2>
+          <p className="text-light-sm">Thiết lập các quy tắc để tự động đánh dấu thông báo là **Ưu tiên (Important)**.</p>
+          <div className="login-form" style={{gap: '0.5rem', marginTop: '1rem'}}>
+             <label className="remember" style={{fontSize: '0.9rem', marginBottom: '0.5rem'}}>
+                <input type="checkbox" defaultChecked />
+                Mark all notifications from `google.com` as Important.
+            </label>
+            <label className="remember" style={{fontSize: '0.9rem'}}>
+                <input type="checkbox" defaultChecked={false} />
+                Mark all notifications containing the word "URGENT" as Important.
+            </label>
+            <button className="signin-btn" style={{ background: '#3b82f6', marginTop: '1rem' }} onClick={() => alert("Đã thêm quy tắc ưu tiên mới")}>
+                <FiPlus style={{marginRight: '0.5rem'}}/> Add New Priority Rule
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: Muting Rules */}
+        <div className="setting-card">
+          <h2>Muting & Spam Rules</h2>
+          <p className="text-light-sm">Thiết lập các quy tắc để tự động **Ẩn (Mute)** hoặc **Chuyển vào Thư rác (Spam)**.</p>
+          <div className="login-form" style={{gap: '0.5rem', marginTop: '1rem'}}>
+            <label className="remember" style={{fontSize: '0.9rem', marginBottom: '0.5rem'}}>
+                <input type="checkbox" defaultChecked />
+                Send all notifications from `fake-promo.net` to Junk & Spam.
+            </label>
+            <label className="remember" style={{fontSize: '0.9rem'}}>
+                <input type="checkbox" defaultChecked={false} />
+                Mute all TikTok notifications from 10 PM to 7 AM.
+            </label>
+            <button className="signin-btn" style={{ background: '#ef476f', marginTop: '1rem' }} onClick={() => alert("Đã thêm quy tắc chặn mới")}>
+                <FiTrash2 style={{marginRight: '0.5rem'}}/> Add New Mute Rule
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  // Trang Link Account (MỚI)
+  const LinkAccountPage = () => (
+    <section className="dashboard link-account-page">
+      <div className="dashboard-header">
+        <h1>Link Accounts</h1>
+      </div>
+      <div className="settings-container" style={{ gridTemplateColumns: 'minmax(300px, 600px)' }}> {/* Điều chỉnh layout */}
+        {/* Card Gộp: Tất cả các tùy chọn Liên kết */}
+        <div className="setting-card">
+          <h2>Connect External Services</h2>
+          <p className="text-light-sm">Liên kết các tài khoản bên ngoài để Synapse có thể tổng hợp thông báo của bạn. (Chức năng giả lập)</p>
+          
+          <div className="login-form" style={{gap: '0.75rem', marginTop: '1.5rem'}}>
+            
+            {/* 1. Google/Email */}
+            <label>Email & Calendar Integration</label>
+            <button className="signin-btn" style={{ background: '#13daddff', marginTop: 0 }}>
+              <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Google" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(0)'}} />
+              Link Google (Gmail, Meet, Calendar)
+            </button>
+            <button className="signin-btn" style={{ background: '#b7d410ff', marginTop: '0.25rem' }} onClick={() => alert('Đã liên kết với Teams (Giả lập)')}>
+               <img src="By Microsoft 365 - https://www.microsoft.com/en-au/microsoft-365, Public Domain, https://en.wikipedia.org/w/index.php?curid=81305946" alt="Teams" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link Teams
+            </button>
+            
+            <div style={{borderBottom: '1px solid #e5e7eb', margin: '1rem 0'}}></div>
+
+            {/* 2. Social Media */}
+            <label>Social Media Integrations</label>
+            <button className="signin-btn" style={{ background: '#3b5998', marginTop: 0 }} onClick={() => alert('Đã liên kết với Facebook (Giả lập)')}>
+              <img src="https://upload.wikimedia.org/wikipedia/en/0/04/Facebook_f_logo_%282021%29.svg" alt="Facebook" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link Facebook
+            </button>
+            <button className="signin-btn" style={{ background: '#000000', marginTop: '0.25rem' }} onClick={() => alert('Đã liên kết với TikTok (Giả lập)')}>
+               <img src="https://tse3.mm.bing.net/th/id/OIP.47I_BdET_fqF0-ZdNc25kAHaIY?rs=1&pid=ImgDetMain&o=7&rm=3" alt="TikTok" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link TikTok
+            </button>
+            <button className="signin-btn" style={{ background: '#00acee', marginTop: '0.25rem' }} onClick={() => alert('Đã liên kết với Twitter (Giả lập)')}>
+              <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg" alt="X/Twitter" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link X (Twitter)
+            </button>
+             <button className="signin-btn" style={{ background: '#E1306C', marginTop: '0.25rem' }} onClick={() => alert('Đã liên kết với Instagram (Giả lập)')}>
+              <img src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fvi.m.wikipedia.org%2Fwiki%2FT%25E1%25BA%25ADp_tin%3AInstagram_logo_2016.svg&psig=AOvVaw1X6CNZvv3yaxCuUM7n74Eo&ust=1761414216969000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCIiaj7ixvZADFQAAAAAdAAAAABAE" alt="Instagram" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link Instagram
+            </button>
+
+             <div style={{borderBottom: '1px solid #e5e7eb', margin: '1rem 0'}}></div>
+
+            {/* 3. Work/Dev */}
+            <label>Work & Development Tools</label>
+            <button className="signin-btn" style={{ background: '#61DAFB', color: 'black', marginTop: 0 }} onClick={() => alert('Đã liên kết với Slack (Giả lập)')}>
+               <img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" alt="Slack" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(0)'}}/>
+              Link Slack
+            </button>
+            <button className="signin-btn" style={{ background: '#000000', marginTop: '0.25rem' }} onClick={() => alert('Đã liên kết với GitHub (Giả lập)')}>
+               <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub" style={{width: '18px', marginRight: '0.5rem', filter: 'invert(1)'}}/>
+              Link GitHub
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+);
 
   // --- COMPONENT ADMIN (MỚI) ---
   
@@ -674,6 +885,7 @@ function App() {
     );
   }
   
+  // ==== TRANG ADMIN (MỚI) ====
   if (page === 'admin') {
       return <AdminDashboard />;
   }
@@ -690,6 +902,7 @@ function App() {
             <span className="logo-text">SYNAPSE</span>
           </div>
 
+      
           <nav className="nav-menu">
             <button
               className={`nav-item ${activeView === 'inbox' ? 'active' : ''}`}
@@ -718,6 +931,13 @@ function App() {
             >
               <FiFilter className="nav-icon" />
               Filter Settings
+            </button>
+            <button
+              className={`nav-item ${activeView === 'link_account' ? 'active' : ''}`} // <<< MỚI
+              onClick={() => setActiveView('link_account')} // <<< MỚI
+            >
+              <FiLink className="nav-icon" /> {/* <<< MỚI */}
+              Link Accounts {/* <<< MỚI */}
             </button>
             <button
               className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
@@ -777,9 +997,10 @@ function App() {
         {/* RENDER NỘI DUNG CHÍNH CÓ ĐIỀU KIỆN */}
         {activeView === 'inbox' && <InboxPage />}
         {activeView === 'settings' && <AccountSettingsPage />}
-        {activeView === 'all' && <PlaceholderPage title="All Notifications" />}
-        {activeView === 'junk' && <PlaceholderPage title="Junk & Spam" />}
-        {activeView === 'filters' && <PlaceholderPage title="Filter Settings" />}
+        {activeView === 'link_account' && <LinkAccountPage />} {/* <<< MỚI */}
+        {activeView === 'all' && <AllNotificationsPage />} 
+        {activeView === 'junk' && <JunkSpamPage />}       
+        {activeView === 'filters' && <FilterSettingsPage />}
         
       </main>
     </div>
