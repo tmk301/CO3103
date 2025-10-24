@@ -16,15 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.csrf import csrf_exempt
 
-
-# Lazy view loader to avoid importing heavy app modules at import-time
 def _lazy_view(module_path: str, view_name: str):
     def _view(request, *args, **kwargs):
         module = __import__(module_path, fromlist=[view_name])
         view = getattr(module, view_name)
         return view(request, *args, **kwargs)
-    return _view
+    return csrf_exempt(_view)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,6 +32,8 @@ urlpatterns = [
     # RESTful API endpoints (lazy-loaded to avoid import-time DB/model dependencies)
     path('api/users/', _lazy_view('Backend.api_views', 'users_collection'), name='api-users'),
     path('api/sessions/', _lazy_view('Backend.api_views', 'login'), name='api-sessions'),
+    path('api/me/', _lazy_view('Backend.api_views', 'session_info'), name='api-session-info'),
+    path('api/logout/', _lazy_view('Backend.api_views', 'logout_api'), name='api-logout'),
     path('api/users/password/', _lazy_view('Backend.api_views', 'change_password'), name='api-change-password'),
     # SYA social linking endpoints
     path('api/social/', include('sya_social.urls')),

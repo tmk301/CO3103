@@ -168,13 +168,26 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-# Redirect after login
-LOGIN_REDIRECT_URL = '/'
+# Frontend URL (used for redirects after social login). Prefer explicit env FRONTEND_URL,
+# otherwise fall back to the first entry of GOOGLE_JAVASCRIPT_ORIGINS or localhost dev URL.
+_frontend = os.environ.get('FRONTEND_URL') or os.environ.get('GOOGLE_JAVASCRIPT_ORIGINS', '')
+if _frontend:
+    # if multiple origins are set in env, take the first
+    FRONTEND_URL = _frontend.split(',')[0].strip()
+else:
+    FRONTEND_URL = 'http://localhost:5173'
+
+# Redirect after login -> send user back to frontend
+LOGIN_REDIRECT_URL = os.environ.get('LOGIN_REDIRECT_URL', FRONTEND_URL)
+
+# After logout, redirect back to frontend
+LOGOUT_REDIRECT_URL = os.environ.get('LOGOUT_REDIRECT_URL', FRONTEND_URL)
+# django-allauth specific logout redirect
+ACCOUNT_LOGOUT_REDIRECT_URL = os.environ.get('ACCOUNT_LOGOUT_REDIRECT_URL', FRONTEND_URL)
 
 # Allauth account settings (development)
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_AUTHENTICATION_METHOD = 'username'
-ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_LOGIN_METHOD = {'username'}
 
 # Socialaccount provider config (scopes etc). Client ID/SECRET are read from env
 SOCIALACCOUNT_PROVIDERS = {
@@ -193,3 +206,7 @@ SOCIALACCOUNT_PROVIDERS = {
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', '')
+
+# Use custom allauth adapter to avoid automatic social login/signup; we only
+# want to use Google for linking accounts in SYA.
+SOCIALACCOUNT_ADAPTER = 'sya_social.allauth_adapter.SYASocialAdapter'

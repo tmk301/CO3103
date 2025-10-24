@@ -268,3 +268,97 @@ def change_password(request):
         return JsonResponse({'detail': str(e)}, status=500)
 
     return JsonResponse({'detail': 'Password changed successfully.'})
+
+
+def session_info(request):
+    """GET /api/me/ -> return currently authenticated user based on Django session cookie."""
+    try:
+        user_id = request.session.get('user_id')
+    except Exception:
+        user_id = None
+
+    # Debug logging to help diagnose why session isn't picked up
+    try:
+        # print request cookies and session keys to server log (development only)
+        print("[session_info] request.COOKIES:", getattr(request, 'COOKIES', {}))
+        try:
+            print("[session_info] session keys:", list(request.session.keys()))
+        except Exception:
+            print("[session_info] session not accessible")
+        django_user = getattr(request, 'user', None)
+        if django_user is not None:
+            print("[session_info] request.user.is_authenticated:", getattr(django_user, 'is_authenticated', False))
+            print("[session_info] request.user.email:", getattr(django_user, 'email', None))
+    except Exception:
+        pass
+
+    # If session doesn't have our custom 'user_id', try to fall back to Django auth
+    # (useful for django-allauth social logins which authenticate request.user)
+    if not user_id:
+        try:
+            django_user = getattr(request, 'user', None)
+            if django_user and getattr(django_user, 'is_authenticated', False):
+                # try to map by email to our AuthUser
+                email = getattr(django_user, 'email', None)
+                if email:
+                    user = AuthUser.objects.filter(email=email, is_deleted=False).first()
+                    if user:
+                        # persist into session for subsequent calls
+                        try:
+                            request.session['user_id'] = getattr(user, 'user_id', None) or getattr(user, 'id', None)
+                        except Exception:
+                            pass
+                        account = AuthAccount.objects.filter(user=user, is_deleted=False).first()
+                        data = {
+                            'user_id': getattr(user, 'user_id', None) or getattr(user, 'id', None),
+                            'account_id': getattr(account, 'account_id', None) or getattr(account, 'id', None) if account else None,
+                            'username': account.username if account else None,
+                            'email': user.email,
+                            'first_name': user.first_name,
+                            'last_name': user.last_name,
+                            'status': user.status,
+                        }
+                        return JsonResponse({'detail': 'Authenticated', 'data': data})
+        except Exception:
+            pass
+
+        return JsonResponse({'detail': 'Not authenticated'}, status=401)
+
+    try:
+        user = AuthUser.objects.filter(user_id=user_id, is_deleted=False).first()
+        if not user:
+            return JsonResponse({'detail': 'User not found'}, status=404)
+
+        account = AuthAccount.objects.filter(user=user, is_deleted=False).first()
+        data = {
+            'user_id': getattr(user, 'user_id', None) or getattr(user, 'id', None),
+            'account_id': getattr(account, 'account_id', None) or getattr(account, 'id', None) if account else None,
+            'username': account.username if account else None,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'status': user.status,
+        }
+        return JsonResponse({'detail': 'Authenticated', 'data': data})
+    except Exception as e:
+        return JsonResponse({'detail': str(e)}, status=500)
+
+
+def logout_api(request):
+    """POST /api/logout/ -> clear server session and logout django user."""
+    from django.contrib.auth import logout
+
+    try:
+        # flush session data
+        try:
+            request.session.flush()
+        except Exception:
+            pass
+        # also call django logout to clear auth
+        try:
+            logout(request)
+        except Exception:
+            pass
+        return JsonResponse({'detail': 'Logged out'})
+    except Exception as e:
+        return JsonResponse({'detail': str(e)}, status=500)

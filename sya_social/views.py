@@ -7,6 +7,41 @@ from .models import SocialLink, OAuthToken
 from Backend.models import AuthUser
 
 
+@require_GET
+def social_me(request):
+    """Return social links for the currently authenticated SYA user.
+
+    GET /api/social/me/
+    """
+    try:
+        session_user_id = None
+        try:
+            session_user_id = request.session.get('user_id')
+        except Exception:
+            session_user_id = None
+
+        if not session_user_id:
+            # try django auth fallback by email
+            django_user = getattr(request, 'user', None)
+            if django_user and getattr(django_user, 'is_authenticated', False):
+                email = getattr(django_user, 'email', None)
+                user = AuthUser.objects.filter(email=email, is_deleted=False).first()
+                if user:
+                    session_user_id = getattr(user, 'user_id', None) or getattr(user, 'id', None)
+
+        if not session_user_id:
+            return JsonResponse({'detail': 'Not authenticated'}, status=401)
+
+        links = SocialLink.objects.filter(user_id=session_user_id)
+        result = []
+        for link in links:
+            result.append({'provider': link.provider, 'uid': link.uid, 'email': link.email, 'created_at': link.created_at})
+
+        return JsonResponse({'detail': 'ok', 'data': result})
+    except Exception as e:
+        return JsonResponse({'detail': str(e)}, status=500)
+
+
 @csrf_exempt
 @require_POST
 def link_social(request):
@@ -30,6 +65,22 @@ def link_social(request):
     user = AuthUser.objects.filter(email=email, is_deleted=False).first()
     if not user:
         return JsonResponse({'detail': 'SYA user not found for provided email'}, status=404)
+
+    # Ensure the requester is the same SYA user (must be authenticated and match)
+    session_user_id = None
+    try:
+        session_user_id = request.session.get('user_id')
+    except Exception:
+        session_user_id = None
+
+    if session_user_id is None:
+        # try django auth as fallback
+        django_user = getattr(request, 'user', None)
+        if django_user and getattr(django_user, 'is_authenticated', False):
+            session_user_id = getattr(django_user, 'email', None) == email and user.user_id or None
+
+    if session_user_id is None or int(session_user_id) != int(getattr(user, 'user_id', getattr(user, 'id', None))):
+        return JsonResponse({'detail': 'Forbidden: must be authenticated as the target SYA user to link'}, status=403)
 
     link, created = SocialLink.objects.get_or_create(provider=provider, uid=uid, defaults={'user': user, 'email': email, 'extra_data': extra or {}})
     if not created:
