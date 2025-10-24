@@ -26,18 +26,18 @@ import {
 } from "react-icons/fi";
 
 // Dữ liệu người dùng giả (ĐÃ CẬP NHẬT)
-let fakeUser = {
-  name: "Regular User",
-  email: "user@gmail.com",
+let fakeUser = { 
+  name: "Regular User", 
+  email: "user@gmail.com", 
   password: "123456",
-  role: "user"
+  role: "user" 
 };
 
 let fakeAdmin = {
-  name: "System Admin",
-  email: "admin@gmail.com",
-  password: "adminpassword", // Mật khẩu Admin riêng
-  role: "admin"
+    name: "System Admin",
+    email: "admin@gmail.com",
+    password: "adminpassword", // Mật khẩu Admin riêng
+    role: "admin"
 }
 
 function App() {
@@ -57,7 +57,7 @@ function App() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  
   // State cho trang Settings
   const [profileName, setProfileName] = useState(fakeUser.name);
   const [profileEmail, setProfileEmail] = useState(fakeUser.email);
@@ -68,7 +68,7 @@ function App() {
 
   // State Admin
   const [adminCurrentTab, setAdminCurrentTab] = useState('dashboard'); // tab hiện tại trong Admin Panel
-
+  
   // --- HÀM XÁC THỰC & ĐIỀU HƯỚNG ---
 
   const clearAuthForms = () => {
@@ -91,29 +91,29 @@ function App() {
     let authenticatedUser = null;
 
     if (email === fakeUser.email && password === fakeUser.password) {
-      authenticatedUser = fakeUser;
+        authenticatedUser = fakeUser;
     } else if (email === fakeAdmin.email && password === fakeAdmin.password) {
-      authenticatedUser = fakeAdmin;
+        authenticatedUser = fakeAdmin;
     }
 
     if (authenticatedUser) {
-      setMessage(`✅ Đăng nhập thành công! Vai trò: ${authenticatedUser.role.toUpperCase()}`);
-      setUserRole(authenticatedUser.role);
-      setProfileName(authenticatedUser.name); // Thiết lập tên profile
-      setProfileEmail(authenticatedUser.email); // Thiết lập email profile
+        setMessage(`✅ Đăng nhập thành công! Vai trò: ${authenticatedUser.role.toUpperCase()}`);
+        setUserRole(authenticatedUser.role);
+        setProfileName(authenticatedUser.name); // Thiết lập tên profile
+        setProfileEmail(authenticatedUser.email); // Thiết lập email profile
 
-      setTimeout(() => {
-        if (authenticatedUser.role === 'admin') {
-          setPage("admin");
-          setAdminCurrentTab('dashboard');
-        } else {
-          setPage("dashboard");
-          setActiveView("inbox");
-        }
-        setMessage("");
-      }, 800);
+        setTimeout(() => {
+            if (authenticatedUser.role === 'admin') {
+                setPage("admin");
+                setAdminCurrentTab('dashboard');
+            } else {
+                setPage("dashboard");
+                setActiveView("inbox");
+            }
+            setMessage("");
+        }, 800);
     } else {
-      setMessage("❌ Email hoặc mật khẩu không chính xác.");
+        setMessage("❌ Email hoặc mật khẩu không chính xác.");
     }
   };
 
@@ -159,10 +159,10 @@ function App() {
     clearSettingsForms();
     setNotifications([]);
     setLoading(true);
-    setProfileName(fakeUser.name);
+    setProfileName(fakeUser.name); 
     setProfileEmail(fakeUser.email);
     setUserRole(null); // Reset role
-
+    
     // Chuyển về trang đăng nhập
     setPage("login");
   };
@@ -197,19 +197,19 @@ function App() {
 
 
   // --- COMPONENT CON CHO CÁC VIEW (USER) ---
-
+  
   // Component cho trang Account Settings (Giữ nguyên)
   const AccountSettingsPage = () => {
     // ... (Giữ nguyên logic Profile và Password update) ...
     const handleUpdateProfile = (e) => {
       e.preventDefault();
       // Logic cập nhật fakeUser/fakeAdmin (phức tạp hơn)
-      if (userRole === 'admin') {
-        fakeAdmin.name = profileName;
-        fakeAdmin.email = profileEmail;
+      if(userRole === 'admin') {
+          fakeAdmin.name = profileName;
+          fakeAdmin.email = profileEmail;
       } else {
-        fakeUser.name = profileName;
-        fakeUser.email = profileEmail;
+          fakeUser.name = profileName;
+          fakeUser.email = profileEmail;
       }
       setSettingsMessage("✅ Cập nhật thông tin thành công!");
       setTimeout(() => setSettingsMessage(""), 2000);
@@ -333,7 +333,7 @@ function App() {
   );
 
   // --- COMPONENT ADMIN (MỚI) ---
-
+  
   // Dữ liệu menu Admin
   const adminNav = [
     { id: 'dashboard', name: 'Admin Dashboard', icon: FiActivity, color: '#3b82f6' },
@@ -348,39 +348,39 @@ function App() {
 
     const DashboardContent = () => (
       <div id="admin-dashboard">
-        <h1 className="admin-title">System Overview</h1>
-        <div className="stats-container admin-stats">
-          <div className="stat-card admin-stat-card">
-            <div className="stat-info">
-              <p className="stat-title">Total Users</p>
-              <p className="stat-value">1,248</p>
-            </div>
-            <div className="stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><FiUsers /></div>
+          <h1 className="admin-title">System Overview</h1>
+          <div className="stats-container admin-stats">
+              <div className="stat-card admin-stat-card">
+                  <div className="stat-info">
+                      <p className="stat-title">Total Users</p>
+                      <p className="stat-value">1,248</p>
+                  </div>
+                  <div className="stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}><FiUsers /></div>
+              </div>
+              <div className="stat-card admin-stat-card">
+                  <div className="stat-info">
+                      <p className="stat-title">Critical Errors</p>
+                      <p className="stat-value">12</p>
+                  </div>
+                  <div className="stat-icon" style={{ background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f' }}><FiAlertOctagon /></div>
+              </div>
+              <div className="stat-card admin-stat-card">
+                  <div className="stat-info">
+                      <p className="stat-title">System Uptime</p>
+                      <p className="stat-value">99.98%</p>
+                  </div>
+                  <div className="stat-icon" style={{ background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0' }}><FiCheckCircle /></div>
+              </div>
           </div>
-          <div className="stat-card admin-stat-card">
-            <div className="stat-info">
-              <p className="stat-title">Critical Errors</p>
-              <p className="stat-value">12</p>
-            </div>
-            <div className="stat-icon" style={{ background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f' }}><FiAlertOctagon /></div>
-          </div>
-          <div className="stat-card admin-stat-card">
-            <div className="stat-info">
-              <p className="stat-title">System Uptime</p>
-              <p className="stat-value">99.98%</p>
-            </div>
-            <div className="stat-icon" style={{ background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0' }}><FiCheckCircle /></div>
-          </div>
-        </div>
 
-        <div className="setting-card">
-          <h2>Global Notification Broadcast</h2>
-          <form onSubmit={(e) => { e.preventDefault(); handleAdminAction('Send Global Message'); }} className="login-form">
-            <label>Message Content</label>
-            <textarea rows="3" placeholder="Enter message to all users..." className="admin-textarea" required></textarea>
-            <button type="submit" className="signin-btn" style={{ background: '#ef476f' }}>Send Critical Alert</button>
-          </form>
-        </div>
+          <div className="setting-card">
+              <h2>Global Notification Broadcast</h2>
+              <form onSubmit={(e) => { e.preventDefault(); handleAdminAction('Send Global Message'); }} className="login-form">
+                  <label>Message Content</label>
+                  <textarea rows="3" placeholder="Enter message to all users..." className="admin-textarea" required></textarea>
+                  <button type="submit" className="signin-btn" style={{ background: '#ef476f' }}>Send Critical Alert</button>
+              </form>
+          </div>
       </div>
     );
 
@@ -391,40 +391,40 @@ function App() {
           <button className="refresh-btn" onClick={() => handleAdminAction('Add User')}><FiPlus className="refresh-icon" />Add New User</button>
           <button className="refresh-btn" onClick={() => handleAdminAction('Export Data')}><FiDownload className="refresh-icon" />Export Data</button>
         </div>
-
+        
         <div className="notifications-list"> {/* Tái sử dụng style list */}
-          <div className="notification-card">
-            <div className="notification-content">
-              <div className="notification-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-                <FiUsers />
-              </div>
-              <div className="notification-details">
-                <h3>John Doe (Admin)</h3>
-                <p className="notification-source">john.doe@notifruit.com | Role: **Admin**</p>
-                <p className="notification-message">Last login: 2 minutes ago | Status: Active</p>
-              </div>
+            <div className="notification-card">
+                <div className="notification-content">
+                    <div className="notification-icon" style={{background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6'}}>
+                        <FiUsers />
+                    </div>
+                    <div className="notification-details">
+                        <h3>John Doe (Admin)</h3>
+                        <p className="notification-source">john.doe@notifruit.com | Role: **Admin**</p>
+                        <p className="notification-message">Last login: 2 minutes ago | Status: Active</p>
+                    </div>
+                </div>
+                <div className="notification-actions">
+                    <button className="priority-btn active" onClick={() => handleAdminAction('Edit John')}>Edit</button>
+                    <button className="priority-btn" style={{background: '#ef476f', color: 'white'}} onClick={() => handleAdminAction('Suspend John')}>Suspend</button>
+                </div>
             </div>
-            <div className="notification-actions">
-              <button className="priority-btn active" onClick={() => handleAdminAction('Edit John')}>Edit</button>
-              <button className="priority-btn" style={{ background: '#ef476f', color: 'white' }} onClick={() => handleAdminAction('Suspend John')}>Suspend</button>
+             <div className="notification-card">
+                <div className="notification-content">
+                    <div className="notification-icon" style={{background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0'}}>
+                        <FiUsers />
+                    </div>
+                    <div className="notification-details">
+                        <h3>{fakeUser.name} (User)</h3>
+                        <p className="notification-source">{fakeUser.email} | Role: User</p>
+                        <p className="notification-message">Last login: 5 hours ago | Status: Active</p>
+                    </div>
+                </div>
+                <div className="notification-actions">
+                    <button className="priority-btn active" onClick={() => handleAdminAction('Edit User')}>Edit</button>
+                    <button className="priority-btn" style={{background: '#ffbe0b', color: 'white'}} onClick={() => handleAdminAction('Force Logout User')}>Force Logout</button>
+                </div>
             </div>
-          </div>
-          <div className="notification-card">
-            <div className="notification-content">
-              <div className="notification-icon" style={{ background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0' }}>
-                <FiUsers />
-              </div>
-              <div className="notification-details">
-                <h3>{fakeUser.name} (User)</h3>
-                <p className="notification-source">{fakeUser.email} | Role: User</p>
-                <p className="notification-message">Last login: 5 hours ago | Status: Active</p>
-              </div>
-            </div>
-            <div className="notification-actions">
-              <button className="priority-btn active" onClick={() => handleAdminAction('Edit User')}>Edit</button>
-              <button className="priority-btn" style={{ background: '#ffbe0b', color: 'white' }} onClick={() => handleAdminAction('Force Logout User')}>Force Logout</button>
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -433,65 +433,65 @@ function App() {
       <div id="system-logs">
         <h1 className="admin-title">System Logs (Simulated)</h1>
         <div className="notifications-list">
-          <div className="notification-card priority" style={{ borderLeftColor: '#ef476f' }}>
-            <div className="notification-content">
-              <div className="notification-icon" style={{ background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f' }}>
-                <FiAlertOctagon />
-              </div>
-              <div className="notification-details">
-                <h3>CRITICAL: Database Failure</h3>
-                <p className="notification-source">Source: DB-Server-01</p>
-                <p className="notification-message">Connection pool exhausted. Attempted 5 auto-reconnects. Status: Offline.</p>
-              </div>
+             <div className="notification-card priority" style={{borderLeftColor: '#ef476f'}}>
+                <div className="notification-content">
+                    <div className="notification-icon" style={{background: 'rgba(239, 71, 111, 0.1)', color: '#ef476f'}}>
+                        <FiAlertOctagon />
+                    </div>
+                    <div className="notification-details">
+                        <h3>CRITICAL: Database Failure</h3>
+                        <p className="notification-source">Source: DB-Server-01</p>
+                        <p className="notification-message">Connection pool exhausted. Attempted 5 auto-reconnects. Status: Offline.</p>
+                    </div>
+                </div>
+                <div className="notification-actions"><span className="notification-time">2 mins ago</span></div>
             </div>
-            <div className="notification-actions"><span className="notification-time">2 mins ago</span></div>
-          </div>
-          <div className="notification-card">
-            <div className="notification-content">
-              <div className="notification-icon" style={{ background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0' }}>
-                <FiCheckCircle />
-              </div>
-              <div className="notification-details">
-                <h3>SUCCESS: User Login</h3>
-                <p className="notification-source">User: {fakeAdmin.email}</p>
-                <p className="notification-message">IP: 203.0.113.45 | Session created successfully.</p>
-              </div>
+            <div className="notification-card">
+                <div className="notification-content">
+                    <div className="notification-icon" style={{background: 'rgba(6, 214, 160, 0.1)', color: '#06d6a0'}}>
+                        <FiCheckCircle />
+                    </div>
+                    <div className="notification-details">
+                        <h3>SUCCESS: User Login</h3>
+                        <p className="notification-source">User: {fakeAdmin.email}</p>
+                        <p className="notification-message">IP: 203.0.113.45 | Session created successfully.</p>
+                    </div>
+                </div>
+                 <div className="notification-actions"><span className="notification-time">5 mins ago</span></div>
             </div>
-            <div className="notification-actions"><span className="notification-time">5 mins ago</span></div>
-          </div>
         </div>
       </div>
     );
 
     const AdminSettingsContent = () => (
-      <div id="admin-settings">
-        <h1 className="admin-title">Global System Settings</h1>
-        <div className="settings-container">
-          <div className="setting-card">
-            <h2>Maintenance Mode</h2>
-            <p className="text-light-sm">Toggle để kích hoạt hoặc hủy kích hoạt chế độ bảo trì toàn hệ thống.</p>
-            <div className="form-row" style={{ marginTop: '1.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-              <label className="remember">
-                <input type="checkbox" onChange={() => handleAdminAction('Toggle Maintenance')} />
-                Activate Maintenance Mode
-              </label>
-              <button className="signin-btn" style={{ background: '#ffbe0b', padding: '0.5rem 1rem', marginTop: 0 }} onClick={() => handleAdminAction('Schedule Downtime')}>Schedule</button>
+        <div id="admin-settings">
+            <h1 className="admin-title">Global System Settings</h1>
+            <div className="settings-container">
+                <div className="setting-card">
+                    <h2>Maintenance Mode</h2>
+                    <p className="text-light-sm">Toggle để kích hoạt hoặc hủy kích hoạt chế độ bảo trì toàn hệ thống.</p>
+                    <div className="form-row" style={{marginTop: '1.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem'}}>
+                        <label className="remember">
+                            <input type="checkbox" onChange={() => handleAdminAction('Toggle Maintenance')} />
+                            Activate Maintenance Mode
+                        </label>
+                        <button className="signin-btn" style={{ background: '#ffbe0b', padding: '0.5rem 1rem', marginTop: 0 }} onClick={() => handleAdminAction('Schedule Downtime')}>Schedule</button>
+                    </div>
+                </div>
+                <div className="setting-card">
+                    <h2>API Keys & Security</h2>
+                    <p className="text-light-sm">Quản lý Master API Key và cài đặt bảo mật. **Hành động không thể hoàn tác.**</p>
+                    <div className="login-form" style={{marginTop: '1rem'}}>
+                        <button className="signin-btn" style={{ background: '#ef476f', marginTop: 0 }} onClick={() => handleAdminAction('Regenerate Master Key')}>
+                            <FiKey className="nav-icon" style={{marginRight: '0.5rem'}}/> Regenerate Master API Key
+                        </button>
+                        <button className="signin-btn" style={{ background: '#9ca3af', marginTop: '0.5rem' }} onClick={() => handleAdminAction('Flush Cache')}>
+                             <FiRefreshCw className="nav-icon" style={{marginRight: '0.5rem'}}/> Flush Global Cache
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div className="setting-card">
-            <h2>API Keys & Security</h2>
-            <p className="text-light-sm">Quản lý Master API Key và cài đặt bảo mật. **Hành động không thể hoàn tác.**</p>
-            <div className="login-form" style={{ marginTop: '1rem' }}>
-              <button className="signin-btn" style={{ background: '#ef476f', marginTop: 0 }} onClick={() => handleAdminAction('Regenerate Master Key')}>
-                <FiKey className="nav-icon" style={{ marginRight: '0.5rem' }} /> Regenerate Master API Key
-              </button>
-              <button className="signin-btn" style={{ background: '#9ca3af', marginTop: '0.5rem' }} onClick={() => handleAdminAction('Flush Cache')}>
-                <FiRefreshCw className="nav-icon" style={{ marginRight: '0.5rem' }} /> Flush Global Cache
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
     );
 
     switch (currentTab) {
@@ -505,77 +505,77 @@ function App() {
 
   // Component Khung Admin Dashboard
   const AdminDashboard = () => (
-    <div className="app-container">
-      {/* --- SIDEBAR ADMIN --- */}
-      <aside className={`sidebar ${sidebarOpen ? "active" : ""}`}>
-        <div>
-          <div className="logo-container">
-            <FiShield className="logo-icon" style={{ color: adminNav.find(n => n.id === adminCurrentTab)?.color || '#3b82f6' }} />
-            <span className="logo-text">ADMIN PANEL</span>
-          </div>
+      <div className="app-container">
+          {/* --- SIDEBAR ADMIN --- */}
+          <aside className={`sidebar ${sidebarOpen ? "active" : ""}`}>
+              <div>
+                  <div className="logo-container">
+                      <FiShield className="logo-icon" style={{color: adminNav.find(n => n.id === adminCurrentTab)?.color || '#3b82f6'}} />
+                      <span className="logo-text">ADMIN PANEL</span>
+                  </div>
 
-          <nav className="nav-menu">
-            {adminNav.map(item => (
-              <button
-                key={item.id}
-                className={`nav-item ${adminCurrentTab === item.id ? 'active' : ''}`}
-                onClick={() => setAdminCurrentTab(item.id)}
-                style={adminCurrentTab === item.id ? { backgroundColor: `${item.color}1A`, color: item.color } : {}}
-              >
-                <item.icon className="nav-icon" style={adminCurrentTab === item.id ? { color: item.color } : {}} />
-                {item.name}
-              </button>
-            ))}
-          </nav>
-        </div>
+                  <nav className="nav-menu">
+                      {adminNav.map(item => (
+                          <button
+                              key={item.id}
+                              className={`nav-item ${adminCurrentTab === item.id ? 'active' : ''}`}
+                              onClick={() => setAdminCurrentTab(item.id)}
+                              style={adminCurrentTab === item.id ? { backgroundColor: `${item.color}1A`, color: item.color } : {}}
+                          >
+                              <item.icon className="nav-icon" style={adminCurrentTab === item.id ? { color: item.color } : {}}/>
+                              {item.name}
+                          </button>
+                      ))}
+                  </nav>
+              </div>
 
-        {/* NÚT ĐĂNG XUẤT */}
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="nav-item logout-btn">
-            <FiLogOut className="nav-icon" />
-            Đăng xuất
-          </button>
-        </div>
-      </aside>
+              {/* NÚT ĐĂNG XUẤT */}
+              <div className="sidebar-footer">
+                  <button onClick={handleLogout} className="nav-item logout-btn">
+                      <FiLogOut className="nav-icon" />
+                      Đăng xuất
+                  </button>
+              </div>
+          </aside>
 
-      {/* --- MAIN CONTENT ADMIN --- */}
-      <main className="main-content">
-        <header className="app-header">
-          <div className="header-left">
-            <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <FiMenu />
-            </button>
-          </div>
+          {/* --- MAIN CONTENT ADMIN --- */}
+          <main className="main-content">
+              <header className="app-header">
+                  <div className="header-left">
+                      <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                          <FiMenu />
+                      </button>
+                  </div>
 
-          <div className="header-right">
-            <p className="text-light-sm" style={{ marginRight: '1rem' }}>Logged in as: **{fakeAdmin.name}**</p>
-            <button className="header-btn notification-btn">
-              <FiBell />
-              <span className="badge">12</span>
-            </button>
-            <div className="user-avatar"><img src="https://i.pravatar.cc/40?img=6" alt="Admin Avatar" /></div>
-          </div>
-        </header>
+                  <div className="header-right">
+                      <p className="text-light-sm" style={{marginRight: '1rem'}}>Logged in as: **{fakeAdmin.name}**</p>
+                      <button className="header-btn notification-btn">
+                          <FiBell />
+                          <span className="badge">12</span>
+                      </button>
+                      <div className="user-avatar"><img src="https://i.pravatar.cc/40?img=6" alt="Admin Avatar" /></div>
+                  </div>
+              </header>
 
-        <div className="dashboard admin-panel">
-          <AdminContent currentTab={adminCurrentTab} />
-        </div>
-      </main>
-    </div>
+              <div className="dashboard admin-panel">
+                  <AdminContent currentTab={adminCurrentTab} />
+              </div>
+          </main>
+      </div>
   );
-
+  
 
   // --- RENDER CHÍNH ---
 
   // ==== CÁC TRANG XÁC THỰC (Login, Register, Forgot) ====
   if (page === "login" || page === "register" || page === "forgot") {
     // ... (Giữ nguyên phần render Login/Register/Forgot) ...
-    return (
+     return (
       <div className="login-page">
         <div className="login-glass">
           <div className="text-center">
             <div className="logo-container">
-              <img src="/logo.png" alt="Synapse" className="logo-img" />
+              <i className="feather-icon">🔔</i>
               <span className="logo-text">SYNAPSE</span>
             </div>
             <p className="subtitle">Your smart notification hub</p>
@@ -673,9 +673,9 @@ function App() {
       </div>
     );
   }
-
+  
   if (page === 'admin') {
-    return <AdminDashboard />;
+      return <AdminDashboard />;
   }
 
   // ==== TRANG DASHBOARD USER ====
@@ -687,7 +687,6 @@ function App() {
         <div>
           <div className="logo-container">
             <FiBell className="logo-icon" />
-            <img src="/logo.png" alt="Synapse" className="logo-img" />
             <span className="logo-text">SYNAPSE</span>
           </div>
 
@@ -727,15 +726,15 @@ function App() {
               <FiSettings className="nav-icon" />
               Account Settings
             </button>
-            {/* NÚT ADMIN PANEL (Chỉ hiển thị nếu user là admin) */}
-            {userRole === 'admin' && (
-              <button
-                className={`nav-item admin-panel-btn`}
-                onClick={() => setPage('admin')}
-              >
-                <FiShield className="nav-icon" />
-                Admin Panel
-              </button>
+             {/* NÚT ADMIN PANEL (Chỉ hiển thị nếu user là admin) */}
+             {userRole === 'admin' && (
+                <button
+                    className={`nav-item admin-panel-btn`}
+                    onClick={() => setPage('admin')}
+                >
+                    <FiShield className="nav-icon" />
+                    Admin Panel
+                </button>
             )}
           </nav>
         </div>
@@ -781,7 +780,7 @@ function App() {
         {activeView === 'all' && <PlaceholderPage title="All Notifications" />}
         {activeView === 'junk' && <PlaceholderPage title="Junk & Spam" />}
         {activeView === 'filters' && <PlaceholderPage title="Filter Settings" />}
-
+        
       </main>
     </div>
   );
