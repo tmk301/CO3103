@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 import SiteLogo from "./assets/Logo.png";
 import SiteBg from "./assets/Background.jpg";
+import Welcome from "./pages/Welcome";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -47,46 +48,123 @@ function App() {
           email: form.email,
         };
 
-    const url = page === "login" ? "/api/login/" : "/api/register/";
+    // Backend API endpoints (use relative URLs so Vite dev proxy forwards them to backend)
+    const url = page === "login" ? `/api/sessions/` : `/api/users/`;
 
     fetch(url, {
       method: "POST",
+      credentials: 'include', // include cookies so backend can set/send session cookie
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
       .then(async (res) => {
+        const text = await res.text();
+        const json = text ? JSON.parse(text) : {};
         if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText || `${page === "login" ? "Login" : "Register"} failed`);
+          const errMsg = json.detail || text || `${page === "login" ? "Login" : "Register"} failed`;
+          throw new Error(errMsg);
         }
-        return res.json();
+        return json;
       })
-      .then((data) => {
+      .then((resp) => {
         if (page === "login") {
-          if (data.token) {
-            localStorage.setItem("token", data.token);
-            alert("Đăng nhập thành công!");
-          } else {
-            alert("Đăng nhập thành công (không có token trả về)");
-          }
+          // Backend returns { detail: 'Login successful.', data: { ...user... } }
+          const user = resp.data || {};
+          // Store minimal user info in localStorage (no token returned by current API)
+          localStorage.setItem('sya_user', JSON.stringify(user));
+          alert('Đăng nhập thành công!');
+          // show welcome page
+          setPage('welcome');
         } else {
-          alert("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
-          setPage("login");
+          alert(resp.detail || 'Đăng ký thành công! Bạn có thể đăng nhập ngay.');
+          setPage('login');
           setForm({
-            username: "",
-            password: "",
-            confirmPassword: "",
-            first_name: "",
-            last_name: "",
-            email: "",
+            username: '',
+            password: '',
+            confirmPassword: '',
+            first_name: '',
+            last_name: '',
+            email: '',
           });
         }
       })
       .catch((err) => {
         console.error(`${page} error:`, err);
-        alert(`${page === "login" ? "Đăng nhập" : "Đăng ký"} thất bại: ` + err.message);
+        alert(`${page === 'login' ? 'Đăng nhập' : 'Đăng ký'} thất bại: ` + err.message);
       });
   };
+
+  // Check backend session on app load (used after social redirect)
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch(`/api/me/`, {
+          method: 'GET',
+          credentials: 'include', // include cookies from backend domain (proxied)
+        });
+        if (!res.ok) return; // not authenticated
+        const json = await res.json();
+        const user = json.data || {};
+        // store minimal user info and show welcome
+        localStorage.setItem('sya_user', JSON.stringify(user));
+        setPage('welcome');
+      } catch (e) {
+        // ignore
+      }
+    };
+    checkSession();
+    
+    // If the social adapter redirected back with social params, try to link
+    const q = new URLSearchParams(window.location.search);
+    const provider = q.get('social_provider');
+    const uid = q.get('social_uid');
+    const email = q.get('social_email');
+    if (provider && uid && email) {
+      // Only attempt linking if user is logged into SYA (we stored sya_user)
+      const stored = localStorage.getItem('sya_user');
+      if (stored) {
+        (async () => {
+          try {
+            const resp = await fetch('/api/social/link/', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ provider, uid, email, extra_data: {} }),
+            });
+            const text = await resp.text();
+            const json = text ? JSON.parse(text) : {};
+            if (!resp.ok) {
+              alert('Liên kết thất bại: ' + (json.detail || text));
+            } else {
+              alert('Liên kết Google thành công!');
+            }
+          } catch (err) {
+            console.error('link social error', err);
+            alert('Liên kết thất bại: ' + err.message);
+          } finally {
+            // remove social params from URL
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('social_provider');
+              url.searchParams.delete('social_uid');
+              url.searchParams.delete('social_email');
+              window.history.replaceState({}, document.title, url.pathname + url.search);
+            } catch (e) {}
+          }
+        })();
+      } else {
+        // Not logged into SYA — clear params and show message
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('social_provider');
+          url.searchParams.delete('social_uid');
+          url.searchParams.delete('social_email');
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        } catch (e) {}
+        alert('Vui lòng đăng nhập vào SYA trước khi liên kết tài khoản Google.');
+      }
+    }
+  }, []);
 
   return (
     <div
@@ -103,7 +181,7 @@ function App() {
           Synapse giúp bạn quản lý thông báo hộp thư và tăng hiệu suất công việc.
         </p>
       </section>
-      {page === "login" ? (
+      {page === "login" && (
         <section className="auth-card" aria-label="Đăng nhập">
           <form onSubmit={handleSubmit} className="auth-form">
             {/* 2 ô nhập nằm trên cùng */}
@@ -129,6 +207,18 @@ function App() {
               Đăng nhập
             </button>
 
+            {/* Social login (Google) */}
+            <button
+              type="button"
+              className="btn btn-google"
+              onClick={() => {
+                // Use relative path so Vite dev server proxies to backend
+                window.location.href = `/accounts/google/login/`;
+              }}
+            >
+              Đăng nhập với Google
+            </button>
+
             {/* Link Quên mật khẩu? */}
             <a className="link-forgot" href="#">
               Quên mật khẩu?
@@ -144,7 +234,9 @@ function App() {
             </button>
           </form>
         </section>
-      ) : (
+      )}
+
+      {page === "register" && (
         <section className="auth-card" aria-label="Đăng ký">
           <h3 className="register-title">Tạo tài khoản mới</h3>
           <form onSubmit={handleSubmit} className="auth-form">
@@ -212,6 +304,8 @@ function App() {
           </form>
         </section>
       )}
+
+      {page === "welcome" && <Welcome />}
     </div>
   );
 }
