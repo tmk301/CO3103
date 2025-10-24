@@ -674,7 +674,6 @@ function App() {
     );
   }
   
-  // ==== TRANG ADMIN (MỚI) ====
   if (page === 'admin') {
       return <AdminDashboard />;
   }

@@ -797,17 +797,14 @@ body {
     height: 36px;
   }
 }
-/* === TRANG ỨNG DỤNG (DASHBOARD) === */
 .app-container {
   /* Đảm bảo lấp đầy #root */
   width: 100%; 
   min-height: 100vh;
 
-  /* Giữ nguyên nền gradient cho cả user và admin */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* ... (Các style sidebar, header, nav-item giữ nguyên) ... */
 
 /* Nút Admin Panel trong Sidebar User */
 .admin-panel-btn {
@@ -829,7 +826,7 @@ body {
   padding: 2rem;
 }
 
-/* ADMIN PANEL STYLES (MỚI) */
+/* ADMIN PANEL STYLES  */
 .admin-panel .admin-title {
     font-size: 2rem;
     font-weight: 700;
@@ -867,9 +864,8 @@ body {
     margin-bottom: 1rem;
 }
 
-/* ... (Các style khác giữ nguyên) ... */
 
 /* === RESPONSIVE (AUTOFIT) === */
 @media (max-width: 480px) {
-  /* ... (Giữ nguyên responsive) ... */
+  
 }
