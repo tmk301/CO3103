@@ -20,9 +20,12 @@ from Backend import api_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Simple API endpoints for frontend dev
-    path('api/register/', api_views.register, name='api-register'),
-    path('api/login/', api_views.login, name='api-login'),
-    path('api/change_password/', api_views.change_password, name='api-change-password'),
-    path('api/get_all_users/', api_views.get_all_users, name='api-get-all-users'),
+    # RESTful API endpoints
+    path('api/users/', api_views.users_collection, name='api-users'),
+    path('api/sessions/', api_views.login, name='api-sessions'),
+    path('api/users/password/', api_views.change_password, name='api-change-password'),
+    # Google OAuth endpoints
+    path('api/google/auth/', api_views.google_auth, name='api-google-auth'),
+    path('api/google/oauth2callback/', api_views.google_oauth2callback, name='api-google-callback'),
+    path('api/google/userinfo/', api_views.google_userinfo, name='api-google-userinfo'),
 ]
