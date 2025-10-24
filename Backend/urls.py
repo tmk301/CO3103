@@ -15,17 +15,23 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from Backend import api_views
+from django.urls import path, include
+
+
+# Lazy view loader to avoid importing heavy app modules at import-time
+def _lazy_view(module_path: str, view_name: str):
+    def _view(request, *args, **kwargs):
+        module = __import__(module_path, fromlist=[view_name])
+        view = getattr(module, view_name)
+        return view(request, *args, **kwargs)
+    return _view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # RESTful API endpoints
-    path('api/users/', api_views.users_collection, name='api-users'),
-    path('api/sessions/', api_views.login, name='api-sessions'),
-    path('api/users/password/', api_views.change_password, name='api-change-password'),
-    # Google OAuth endpoints
-    path('api/google/auth/', api_views.google_auth, name='api-google-auth'),
-    path('api/google/oauth2callback/', api_views.google_oauth2callback, name='api-google-callback'),
-    path('api/google/userinfo/', api_views.google_userinfo, name='api-google-userinfo'),
+    # django-allauth endpoints (login, logout, social callbacks)
+    path('accounts/', include('allauth.urls')),
+    # RESTful API endpoints (lazy-loaded to avoid import-time DB/model dependencies)
+    path('api/users/', _lazy_view('Backend.api_views', 'users_collection'), name='api-users'),
+    path('api/sessions/', _lazy_view('Backend.api_views', 'login'), name='api-sessions'),
+    path('api/users/password/', _lazy_view('Backend.api_views', 'change_password'), name='api-change-password'),
 ]

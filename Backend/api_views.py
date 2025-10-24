@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError, transaction, connection
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
-from .models import AuthUser, AuthAccount, OAuthToken, SocialAccount
+from .models import AuthUser, AuthAccount
 import json
 import os
 import string
