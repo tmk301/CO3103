@@ -121,3 +121,6 @@ celerybeat.pid
 
 # Testing
 tests/
+
+# Migrations
+migrations/

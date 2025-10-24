@@ -15,29 +15,6 @@ class AuthUser(models.Model):
         managed = False
         db_table = 'auth.user'
 
-
-class OAuthToken(models.Model):
-    """Store OAuth tokens for external providers per user.
-
-    This model is managed by Django and will require migrations to create the
-    corresponding table. Fields are intentionally generic so other providers
-    can be stored in the same table if needed.
-    """
-    token_id = models.AutoField(primary_key=True, db_column='token_id')
-    user = models.ForeignKey('AuthUser', models.CASCADE, db_column='user_id')
-    provider = models.CharField(max_length=64)
-    access_token = models.TextField(null=True)
-    refresh_token = models.TextField(null=True)
-    scope = models.TextField(null=True)
-    expires_at = models.DateTimeField(null=True)
-    is_deleted = models.BooleanField(default=False)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField(null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'auth.oauth_token'
-
 class AuthRole(models.Model):
     role_id = models.AutoField(primary_key=True, db_column='role_id')
     role_name = models.CharField(max_length=64)
