@@ -797,3 +797,79 @@ body {
     height: 36px;
   }
 }
+/* === TRANG ỨNG DỤNG (DASHBOARD) === */
+.app-container {
+  /* Đảm bảo lấp đầy #root */
+  width: 100%; 
+  min-height: 100vh;
+
+  /* Giữ nguyên nền gradient cho cả user và admin */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ... (Các style sidebar, header, nav-item giữ nguyên) ... */
+
+/* Nút Admin Panel trong Sidebar User */
+.admin-panel-btn {
+  /* Định kiểu riêng để nổi bật hơn */
+  margin-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  color: var(--secondary);
+}
+.admin-panel-btn:hover {
+  background-color: rgba(131, 56, 236, 0.1); /* Màu secondary nhạt */
+  color: var(--secondary);
+}
+
+/* Dashboard */
+.dashboard {
+  flex-grow: 1;
+  overflow-y: auto; /* Chỉ thanh nội dung chính được cuộn */
+  padding: 2rem;
+}
+
+/* ADMIN PANEL STYLES (MỚI) */
+.admin-panel .admin-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white; 
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-panel .admin-stats .stat-card {
+    /* Điều chỉnh nhẹ cho Admin stats */
+    background: rgba(255, 255, 255, 0.95); /* hơi đục hơn */
+}
+
+.admin-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    resize: vertical;
+}
+
+.text-light-sm {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+/* ... (Các style khác giữ nguyên) ... */
+
+/* === RESPONSIVE (AUTOFIT) === */
+@media (max-width: 480px) {
+  /* ... (Giữ nguyên responsive) ... */
+}
