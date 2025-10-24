@@ -34,4 +34,6 @@ urlpatterns = [
     path('api/users/', _lazy_view('Backend.api_views', 'users_collection'), name='api-users'),
     path('api/sessions/', _lazy_view('Backend.api_views', 'login'), name='api-sessions'),
     path('api/users/password/', _lazy_view('Backend.api_views', 'change_password'), name='api-change-password'),
+    # SYA social linking endpoints
+    path('api/social/', include('sya_social.urls')),
 ]
