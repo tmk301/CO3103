@@ -94,3 +94,26 @@ def change_password(request):
         return JsonResponse({'detail': result.get('message')}, status=400)
 
     return JsonResponse({'detail': result.get('message')})
+
+
+@csrf_exempt
+@require_POST
+def get_all_users(request):
+    """Return a list of users filtered by is_deleted flag.
+
+    Expects JSON body: { "is_deleted": false } (defaults to False if omitted)
+    """
+    try:
+        payload = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    is_deleted = payload.get('is_deleted', False)
+    # Normalize to boolean
+    is_deleted = bool(is_deleted)
+
+    result = services.get_all_users(is_deleted=is_deleted)
+    if not result.get('success'):
+        return JsonResponse({'detail': result.get('message')}, status=400)
+
+    return JsonResponse({'detail': result.get('message'), 'data': result.get('data')})

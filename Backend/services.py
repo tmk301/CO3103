@@ -216,3 +216,25 @@ def change_password(username: str = None, email: str = None, old_password: str =
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+def get_all_users(is_deleted: bool = False) -> dict:
+    """API to get all users."""
+    try:
+        users = AuthUser.objects.filter(is_deleted=is_deleted)
+        user_list = []
+        for user in users:
+            user_list.append({
+                "user_id": getattr(user, 'user_id', None) or getattr(user, 'id', None),
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "status": user.status,
+            })
+        return {
+            "success": True,
+            "message": "Users retrieved successfully.",
+            "data": user_list,
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}

@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/register/', api_views.register, name='api-register'),
     path('api/login/', api_views.login, name='api-login'),
     path('api/change_password/', api_views.change_password, name='api-change-password'),
+    path('api/get_all_users/', api_views.get_all_users, name='api-get-all-users'),
 ]
