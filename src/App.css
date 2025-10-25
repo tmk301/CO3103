@@ -87,7 +87,7 @@ body {
 }
 
 .login-glass .logo-text {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #ffffff;
 }
@@ -99,72 +99,24 @@ body {
   font-size: 0.9rem;
 }
 
-/* Nút OAuth */
-.button-group {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.oauth-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.75rem;
-  font-size: 0.9rem;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.oauth-btn:hover {
-  background: #653fff;
-  color: rgb(255, 255, 255);
-}
-
-.oauth-btn img {
-  width: 16px;
-  height: 16px;
-}
-
-/* Dấu gạch ngang */
-.divider {
-  position: relative;
-  margin: 1.5rem 0;
-  text-align: center;
-}
-
-.divider::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 100%;
-  height: 1px;
-  background: #ffffff;
-  z-index: 1;
-}
-
-.divider span {
-  position: relative;
-  z-index: 2;
-  background: rgb(252, 252, 252);
-  /* Phải khớp với nền .login-glass */
-  color: #000000;
-  padding: 0 0.75rem;
-  font-size: 0.85rem;
-}
-
 /* Form đăng nhập */
 .login-form {
+  margin-top: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+@media (max-width: 560px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 .login-form label {
@@ -175,7 +127,8 @@ body {
 
 .login-form input[type="email"],
 .login-form input[type="password"],
-.login-form input[type="text"] {
+.login-form input[type="text"],
+.login-form input[type="tel"] {
   background: rgba(255, 255, 255, 0.06);
   color: #e5e7eb;
   border: 1px solid #8c8c8c;
@@ -193,6 +146,32 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+.input-with-toggle {
+  position: relative;
+}
+
+.input-with-toggle input {
+  padding-right: 2.25rem;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.9;
+  line-height: 1;
+  padding: 0;
+}
+
+.toggle-visibility:hover {
+  opacity: 1;
+}
+
 /* Hàng trong Form (Remember/Forgot) */
 .form-row {
   display: flex;
@@ -206,7 +185,7 @@ body {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.06);
 }
 
 .link {
@@ -248,6 +227,7 @@ body {
   text-align: center;
   margin-top: 0.8rem;
   font-size: 0.85rem;
+  color: #fff;
 }
 
 /* Text đăng ký */
@@ -832,6 +812,7 @@ body {
   }
 }
 
+/* === TRANG ỨNG DỤNG (DASHBOARD) === */
 .app-container {
   /* Đảm bảo lấp đầy #root */
   width: 100%;
@@ -840,6 +821,33 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* Trang Link Account */
+.link-account-page .setting-card .signin-btn {
+  display: flex;
+  /* Cho phép căn icon bên trong nút */
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.8rem;
+  padding: 0.75rem;
+}
+
+.link-account-page .setting-card img {
+  /* Đảm bảo các logo có kích thước phù hợp */
+  width: 18px;
+  height: 18px;
+}
+
+/* Cập nhật style cho form row trong settings để form link account sử dụng được */
+/* Cần cho các nút Social Media trong Link Account Card hiển thị tốt hơn */
+.setting-card .login-form {
+  gap: 0.75rem;
+}
+
+/* Khắc phục màu của logo Google trong nút */
+.link-account-page .setting-card .signin-btn img[alt="Google"] {
+  filter: none;
+  /* Icon Google thường đã có màu, không cần invert */
+}
 
 /* Nút Admin Panel trong Sidebar User */
 .admin-panel-btn {

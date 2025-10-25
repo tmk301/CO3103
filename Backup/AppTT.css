@@ -40,7 +40,7 @@ body {
   /* Style cơ bản */
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text);
-  background: var(--background); /* Màu nền mặc định */
+  background: url("/bg.jpg") center/cover fixed no-repeat;
   line-height: 1.5;
 }
 
@@ -49,6 +49,7 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
 /* === KẾT THÚC SỬA LỖI LAYOUT === */
 
 
@@ -57,22 +58,22 @@ body {
   /* Đảm bảo lấp đầy #root */
   width: 100%;
   min-height: 100vh;
-  
+
   /* Căn giữa .login-glass */
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem; 
-  background: radial-gradient(circle at 50% 50%, #f5f5f5, #e3e3e3);
+  padding: 1rem;
+  background: transparent !important;
 }
 
 .login-glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.336);
+  backdrop-filter: blur(1px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
   padding: 2.5rem;
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.137);
   width: 100%;
   max-width: 400px;
 }
@@ -86,14 +87,14 @@ body {
 }
 
 .login-glass .logo-text {
-  font-size: 1.8rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #ffffff;
 }
 
 .subtitle {
   text-align: center;
-  color: #6b7280;
+  color: #ffffff;
   margin-top: 0.3rem;
   font-size: 0.9rem;
 }
@@ -111,18 +112,19 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 10px;
-  background: white;
+  background: rgba(255, 255, 255, 0.08);
   padding: 0.75rem;
   font-size: 0.9rem;
-  color: #374151;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .oauth-btn:hover {
-  background: #f9fafb;
+  background: #653fff;
+  color: rgb(255, 255, 255);
 }
 
 .oauth-btn img {
@@ -144,20 +146,16 @@ body {
   top: 50%;
   width: 100%;
   height: 1px;
-  background: #d1d5db;
+  background: #ffffff;
   z-index: 1;
 }
 
 .divider span {
   position: relative;
   z-index: 2;
-  background: rgba(
-    255,
-    255,
-    255,
-    0.85
-  ); /* Phải khớp với nền .login-glass */
-  color: #9ca3af;
+  background: rgb(252, 252, 252);
+  /* Phải khớp với nền .login-glass */
+  color: #000000;
   padding: 0 0.75rem;
   font-size: 0.85rem;
 }
@@ -171,20 +169,23 @@ body {
 
 .login-form label {
   font-size: 0.85rem;
-  color: #374151;
+  color: #ffffff;
   font-weight: 500;
 }
 
 .login-form input[type="email"],
 .login-form input[type="password"],
 .login-form input[type="text"] {
-  border: 1px solid #d1d5db;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  border: 1px solid #8c8c8c;
   border-radius: 10px;
   padding: 0.6rem;
   font-size: 0.9rem;
   outline: none;
   transition: all 0.2s ease;
-  width: 100%; /* Đảm bảo input đầy đủ chiều rộng */
+  width: 100%;
+  /* Đảm bảo input đầy đủ chiều rộng */
 }
 
 .login-form input:focus {
@@ -209,7 +210,7 @@ body {
 }
 
 .link {
-  color: #3b82f6;
+  color: #739fff;
   text-decoration: none;
   font-size: 0.85rem;
   background: none;
@@ -225,8 +226,8 @@ body {
 
 /* Nút */
 .signin-btn {
-  background: #3b82f6;
-  color: white;
+  background: #ffffff;
+  color: rgb(0, 0, 0);
   border: none;
   border-radius: 10px;
   padding: 0.75rem;
@@ -238,7 +239,8 @@ body {
 }
 
 .signin-btn:hover {
-  background: #2563eb;
+  background: #653fff;
+  color: rgb(255, 255, 255);
 }
 
 /* Thông báo lỗi/thành công */
@@ -253,18 +255,18 @@ body {
   text-align: center;
   font-size: 0.85rem;
   margin-top: 1rem;
-  color: #6b7280;
+  color: #ffffff;
 }
 
 .signup-text .link {
-  color: #2563eb;
+  color: #739fff;
   font-weight: 500;
 }
 
 /* === TRANG ỨNG DỤNG (DASHBOARD) === */
 .app-container {
   /* Đảm bảo lấp đầy #root */
-  width: 100%; 
+  width: 100%;
   min-height: 100vh;
 
   display: flex;
@@ -280,9 +282,11 @@ body {
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Đẩy footer xuống */
-  flex-shrink: 0; /* Ngăn sidebar bị co lại */
-  transition: left 0.3s ease; 
+  justify-content: space-between;
+  /* Đẩy footer xuống */
+  flex-shrink: 0;
+  /* Ngăn sidebar bị co lại */
+  transition: left 0.3s ease;
 }
 
 /* Logo của Sidebar */
@@ -296,6 +300,15 @@ body {
   color: var(--primary);
   font-size: 1.75rem;
   margin-right: 0.75rem;
+}
+
+.logo-img {
+  width: 55px;
+  height: 55px;
+  object-fit: contain;
+  margin-right: 0rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .sidebar .logo-text {
@@ -319,7 +332,7 @@ body {
   color: var(--text-light);
   text-decoration: none;
   transition: var(--transition);
-  
+
   /* Reset cho <button> */
   background: none;
   border: none;
@@ -350,7 +363,8 @@ body {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Quan trọng: Ngăn nội dung tràn ra ngoài */
+  overflow: hidden;
+  /* Quan trọng: Ngăn nội dung tràn ra ngoài */
 }
 
 /* Header */
@@ -364,7 +378,8 @@ body {
   justify-content: space-between;
   padding: 0 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 0; /* Ngăn header bị co lại */
+  flex-shrink: 0;
+  /* Ngăn header bị co lại */
 }
 
 .header-left,
@@ -374,7 +389,8 @@ body {
 }
 
 .mobile-menu-btn {
-  display: none; /* Ẩn trên desktop */
+  display: none;
+  /* Ẩn trên desktop */
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -429,7 +445,8 @@ body {
 /* Dashboard */
 .dashboard {
   flex-grow: 1;
-  overflow-y: auto; /* Chỉ thanh nội dung chính được cuộn */
+  overflow-y: auto;
+  /* Chỉ thanh nội dung chính được cuộn */
   padding: 2rem;
 }
 
@@ -443,7 +460,8 @@ body {
 .dashboard-header h1 {
   font-size: 1.75rem;
   font-weight: 700;
-  color: white; /* Nổi bật trên nền gradient */
+  color: white;
+  /* Nổi bật trên nền gradient */
 }
 
 .refresh-btn {
@@ -637,15 +655,18 @@ body {
 
 /* Nút Đăng Xuất */
 .sidebar-footer {
-  margin-top: 1rem; /* Khoảng cách với nav-menu */
+  margin-top: 1rem;
+  /* Khoảng cách với nav-menu */
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
 }
 
 .logout-btn.nav-item:hover {
-  background-color: #fee2e2; /* --danger-light */
+  background-color: #fee2e2;
+  /* --danger-light */
   color: var(--danger);
 }
+
 .logout-btn.nav-item:hover .nav-icon {
   color: var(--danger);
 }
@@ -683,7 +704,8 @@ body {
 }
 
 .setting-card .signin-btn {
-  margin-top: 0.5rem; /* Giảm margin so với login */
+  margin-top: 0.5rem;
+  /* Giảm margin so với login */
 }
 
 .setting-card .message {
@@ -719,9 +741,11 @@ body {
   .sidebar {
     width: 240px;
   }
+
   .app-header {
     padding: 0 1.5rem;
   }
+
   .dashboard {
     padding: 1.5rem;
   }
@@ -729,37 +753,46 @@ body {
 
 @media (max-width: 768px) {
   .sidebar {
-    position: fixed; /* Cố định trên màn hình */
-    left: -100%; /* Ẩn ra ngoài màn hình */
+    position: fixed;
+    /* Cố định trên màn hình */
+    left: -100%;
+    /* Ẩn ra ngoài màn hình */
     top: 0;
     bottom: 0;
-    z-index: 1000; /* Luôn ở trên cùng */
+    z-index: 1000;
+    /* Luôn ở trên cùng */
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   }
 
   .sidebar.active {
-    left: 0; /* Hiện ra khi active */
+    left: 0;
+    /* Hiện ra khi active */
   }
 
   .mobile-menu-btn {
-    display: block; /* Hiện nút hamburger */
+    display: block;
+    /* Hiện nút hamburger */
   }
 
   .app-header {
     padding: 0 1rem;
   }
+
   .dashboard {
     padding: 1rem;
   }
+
   .dashboard-header h1 {
     font-size: 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
+
   /* Trang đăng nhập */
   .login-glass {
-    padding: 2rem 1.5rem; /* Giảm padding trên điện thoại */
+    padding: 2rem 1.5rem;
+    /* Giảm padding trên điện thoại */
   }
 
   /* Dashboard */
@@ -791,15 +824,17 @@ body {
   .header-btn {
     margin-left: 0.75rem;
   }
+
   .user-avatar img {
     margin-left: 0.75rem;
     width: 36px;
     height: 36px;
   }
 }
+
 .app-container {
   /* Đảm bảo lấp đầy #root */
-  width: 100%; 
+  width: 100%;
   min-height: 100vh;
 
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -814,58 +849,60 @@ body {
   padding-top: 1rem;
   color: var(--secondary);
 }
+
 .admin-panel-btn:hover {
-  background-color: rgba(131, 56, 236, 0.1); /* Màu secondary nhạt */
+  background-color: rgba(131, 56, 236, 0.1);
+  /* Màu secondary nhạt */
   color: var(--secondary);
 }
 
 /* Dashboard */
 .dashboard {
   flex-grow: 1;
-  overflow-y: auto; /* Chỉ thanh nội dung chính được cuộn */
+  overflow-y: auto;
+  /* Chỉ thanh nội dung chính được cuộn */
   padding: 2rem;
 }
 
 /* ADMIN PANEL STYLES  */
 .admin-panel .admin-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: white; 
-    margin-bottom: 2rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-panel .admin-stats .stat-card {
-    /* Điều chỉnh nhẹ cho Admin stats */
-    background: rgba(255, 255, 255, 0.95); /* hơi đục hơn */
+  /* Điều chỉnh nhẹ cho Admin stats */
+  background: rgba(255, 255, 255, 0.95);
+  /* hơi đục hơn */
 }
 
 .admin-actions {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .admin-textarea {
-    border: 1px solid #d1d5db;
-    border-radius: 10px;
-    padding: 0.6rem;
-    font-size: 0.9rem;
-    outline: none;
-    transition: all 0.2s ease;
-    width: 100%;
-    resize: vertical;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  resize: vertical;
 }
 
 .text-light-sm {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 1rem;
 }
 
 
 /* === RESPONSIVE (AUTOFIT) === */
-@media (max-width: 480px) {
-  
-}
+@media (max-width: 480px) {}
