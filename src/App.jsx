@@ -28,6 +28,11 @@ import {
   FiEyeOff
 } from "react-icons/fi";
 
+// === API base URL ===
+// Vite: tạo .env -> VITE_API_BASE_URL=http://localhost:8000
+const API_BASE =
+  import.meta?.env?.VITE_API_BASE_URL || "http://localhost:8000";
+
 // Dữ liệu người dùng giả (ĐÃ CẬP NHẬT)
 let fakeUser = {
   name: "Regular User",
@@ -61,7 +66,8 @@ function App() {
   const [captchaOk, setCaptchaOk] = useState(false);
   const [remember, setRemember] = useState(false);
   const [message, setMessage] = useState("");
-  const [userRole, setUserRole] = useState(null); // Vai trò người dùng (null, 'user', 'admin')
+  const [userRole, setUserRole] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
 
   // State Dashboard User
   const [notifications, setNotifications] = useState([]);
@@ -101,34 +107,56 @@ function App() {
   };
 
   // Xử lý đăng nhập (ĐÃ CẬP NHẬT)
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    let authenticatedUser = null;
+    setMessage("");
+    setAuthLoading(true);
 
-    if (email === fakeUser.email && password === fakeUser.password) {
-      authenticatedUser = fakeUser;
-    } else if (email === fakeAdmin.email && password === fakeAdmin.password) {
-      authenticatedUser = fakeAdmin;
-    }
+    // Ô "Email/Username" của bạn đang dùng state 'email'
+    const identifier = email.trim();
+    const isEmail = /\S+@\S+\.\S+/.test(identifier);
+    const payload = isEmail
+      ? { email: identifier, password }
+      : { username: identifier, password };
 
-    if (authenticatedUser) {
-      setMessage(`✅ Login successfully! Role: ${authenticatedUser.role.toUpperCase()}`);
-      setUserRole(authenticatedUser.role);
-      setProfileName(authenticatedUser.name); // Thiết lập tên profile
-      setProfileEmail(authenticatedUser.email); // Thiết lập email profile
+    try {
+      const res = await fetch(`${API_BASE}/api/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",               // <— ĐỂ NHẬN SESSION COOKIE
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // BE trả {detail: "..."} khi lỗi
+        throw new Error(data.detail || "Login failed");
+      }
+
+      // data.data có ít nhất user_id (BE đang set session bằng user_id) 
+      // => bạn có thể suy luận vai trò (nếu BE trả về), nếu không thì cho vào dashboard mặc định
+      const role = data?.data?.role || "user";
+
+      setMessage("✅ Login successfully!");
+      setUserRole(role);
+      // nếu BE trả name/email thì lấy; không thì giữ như cũ
+      if (data?.data?.name) setProfileName(data.data.name);
+      if (isEmail) setProfileEmail(identifier);
 
       setTimeout(() => {
-        if (authenticatedUser.role === 'admin') {
+        if (role === "admin") {
           setPage("admin");
-          setAdminCurrentTab('dashboard');
+          setAdminCurrentTab("dashboard");
         } else {
           setPage("dashboard");
           setActiveView("inbox");
         }
         setMessage("");
-      }, 800);
-    } else {
-      setMessage("❌ Email/Username or password is incorrect.");
+      }, 500);
+    } catch (err) {
+      setMessage(`❌ ${err.message}`);
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -835,7 +863,7 @@ function App() {
                 </button>
               </div>
 
-              <button type="submit" className="signin-btn"> Sign in </button>
+              <button type="submit" className="signin-btn" disabled={authLoading} > {authLoading ? "Signing in..." : "Sign in"} </button>
               {message && <p className="message">{message}</p>}
 
               <p className="signup-text">
