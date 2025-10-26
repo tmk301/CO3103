@@ -123,18 +123,14 @@ function App() {
       const res = await fetch(`${API_BASE}/api/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",               // <— ĐỂ NHẬN SESSION COOKIE
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        // BE trả {detail: "..."} khi lỗi
         throw new Error(data.detail || "Login failed");
       }
-
-      // data.data có ít nhất user_id (BE đang set session bằng user_id) 
-      // => bạn có thể suy luận vai trò (nếu BE trả về), nếu không thì cho vào dashboard mặc định
       const role = data?.data?.role || "user";
 
       setMessage("✅ Login successfully!");
