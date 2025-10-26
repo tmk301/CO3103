@@ -847,7 +847,10 @@ function App() {
               <label>Email/Username</label>
               <input type="text" placeholder="Your email or username" value={email} onChange={(e) => setEmail(e.target.value)} required />
               <label>Password</label>
-              <input type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="input-with-toggle">
+                <input type={showPass ? "text" : "password"} placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" className="toggle-visibility" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? "Hide password" : "Show password"} > {showPass ? <FiEyeOff /> : <FiEye />} </button>
+              </div>
 
               <div className="form-row">
                 <label className="remember">
