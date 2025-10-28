@@ -119,7 +119,7 @@ function App() {
 
     try {
   // Obtain JWT tokens from backend. Use computed payload (email|phone|username).
-  const tokenData = await api.post('/api/token/', payload);
+  const tokenData = await api.post('/api/users/token/', payload);
 
       const access = tokenData?.access;
       const refresh = tokenData?.refresh;
@@ -134,7 +134,7 @@ function App() {
       api.setToken(access);
 
       // Fetch current user profile to get role/name/email
-      const user = await api.get('/api/users/api/me/');
+      const user = await api.get('/api/users/me/');
       const role = user?.role || 'user';
 
       setMessage('✅ Login successfully!');
@@ -211,7 +211,7 @@ function App() {
       setAuthLoading(true);
       setMessage('');
       try {
-        const resp = await api.post('/api/users/api/register/', payload);
+        const resp = await api.post('/api/users/register/', payload);
         // success
         setMessage('🎉 Registration successful! Please login.');
         setTimeout(() => {
