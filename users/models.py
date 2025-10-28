@@ -36,13 +36,27 @@ class Status(models.Model):
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
 
+    def get_by_natural_key(self, username):
+        return self.get(**{self.model.USERNAME_FIELD: username.strip().casefold()})
+
     def _create_user(self, username, email, phone, password, **extra_fields):
         """Create and save a user with the given username and email."""
         if not username:
-            raise ValueError('The given username must be set')
-        email = self.normalize_email(email) if email else ''
+            raise ValueError('Username is required.')
+        username_norm = self.model.normalize_username(username)
+
+        if not email:
+            raise ValueError('Email is required.')
+        # Use manager's normalize_email (inherited from BaseUserManager)
+        email_norm = self.normalize_email(email)
+
         phone_value = phone or ''
-        user = self.model(username=username.strip().casefold(), email=email, phone=phone_value, **extra_fields)
+        user = self.model(
+            username=username_norm,
+            email=email_norm,
+            phone=phone_value,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -83,11 +97,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
+    EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
     def __str__(self):
-        return self.username
-
+        return f"{self.username} ({self.email})"
 
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
