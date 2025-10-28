@@ -100,6 +100,11 @@ class UserCreateSerializer(serializers.Serializer):
         if save_fields:
             user.save(update_fields=save_fields)
 
+        try:
+            Profile.objects.get_or_create(user=user)
+        except Exception:
+            pass
+
         return user
     
 class UserSelfUpdateSerializer(serializers.Serializer):

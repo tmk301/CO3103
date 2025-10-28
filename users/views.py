@@ -3,6 +3,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from django.contrib.auth.models import update_last_login
 
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -138,3 +142,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Update failed due to integrity error."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_serializer(instance if 'instance' in locals() else profile).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+# Custom SimpleJWT token view to update last_login when a token is issued.
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        try:
+            # Update last_login for the authenticated user
+            update_last_login(None, self.user)
+        except Exception:
+            # Do not fail authentication if updating last_login fails
+            pass
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
