@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# If using the collectstatic command, uncomment the following
+# /static/
+
+# Django migrations (optional — track if you want migrations in repo)
+# */migrations/*.py
+# */migrations/*.pyc
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Editors
+*~
+*.swp
+*.swo
+
+# dotenv
+.env
+.env.*
+
+# Virtualenv wrappers
+.python-version
+
+# Distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Logs
+logs/
+*.log
+
+# Celery
+celerybeat-schedule
+
+# Coverage
+.coverage
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# SSH
+*.pem
+
+# JetBrains
+.idea/
+
+# Other
+*.sqlite3
+
+# Node
+node_modules/
+
+# Ignore compiled extensions
+*.so
+
+# VS Code workspace
+*.code-workspace
+
+# Migrations
+migrations/
