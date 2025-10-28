@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import api from "./services/api";
 import {
   FiBell,
   FiInbox,
@@ -28,10 +29,8 @@ import {
   FiEyeOff
 } from "react-icons/fi";
 
-// === API base URL ===
-// Vite: tạo .env -> VITE_API_BASE_URL=http://localhost:8000
-const API_BASE =
-  import.meta?.env?.VITE_API_BASE_URL || "http://localhost:8000";
+// NOTE: Use centralized API wrapper in `src/services/api.js`.
+// Configure the backend base URL in Vite env: VITE_API_BASE_URL
 
 // Dữ liệu người dùng giả (ĐÃ CẬP NHẬT)
 let fakeUser = {
@@ -115,42 +114,50 @@ function App() {
     // Ô "Email/Username" của bạn đang dùng state 'email'
     const identifier = email.trim();
     const isEmail = /\S+@\S+\.\S+/.test(identifier);
-    const payload = isEmail
-      ? { email: identifier, password }
-      : { username: identifier, password };
+    // TokenObtainPairView expects 'username' by default. Send identifier as username.
+    const payload = { username: identifier, password };
 
     try {
-      const res = await fetch(`${API_BASE}/api/login/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+  // Obtain JWT tokens from backend. Use computed payload (email|phone|username).
+  const tokenData = await api.post('/api/token/', payload);
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.detail || "Login failed");
-      }
-      const role = data?.data?.role || "user";
+      const access = tokenData?.access;
+      const refresh = tokenData?.refresh;
 
-      setMessage("✅ Login successfully!");
+      if (!access) throw new Error('No access token returned from server');
+
+      // Save tokens and set token for subsequent requests
+      try {
+        localStorage.setItem('access', access);
+        if (refresh) localStorage.setItem('refresh', refresh);
+      } catch (e) { /* ignore storage errors */ }
+      api.setToken(access);
+
+      // Fetch current user profile to get role/name/email
+      const user = await api.get('/api/users/api/me/');
+      const role = user?.role || 'user';
+
+      setMessage('✅ Login successfully!');
       setUserRole(role);
-      // nếu BE trả name/email thì lấy; không thì giữ như cũ
-      if (data?.data?.name) setProfileName(data.data.name);
-      if (isEmail) setProfileEmail(identifier);
+      if (user?.name) setProfileName(user.name);
+      if (user?.email) setProfileEmail(user.email);
 
       setTimeout(() => {
-        if (role === "admin") {
-          setPage("admin");
-          setAdminCurrentTab("dashboard");
+        if (role === 'admin') {
+          setPage('admin');
+          setAdminCurrentTab('dashboard');
         } else {
-          setPage("dashboard");
-          setActiveView("inbox");
+          setPage('dashboard');
+          setActiveView('inbox');
         }
-        setMessage("");
+        setMessage('');
       }, 500);
     } catch (err) {
-      setMessage(`❌ ${err.message}`);
+      // api.request throws Error with message and optionally err.data
+      // Log full error to help diagnose network/CORS issues
+      // eslint-disable-next-line no-console
+      console.error('Login error:', err);
+      setMessage(`❌ ${err.message || 'Login failed'}`);
     } finally {
       setAuthLoading(false);
     }
@@ -168,9 +175,12 @@ function App() {
     if (!/\S+@\S+\.\S+/.test(email)) {
       setMessage("⚠️ Invalid email."); return;
     }
-    const phoneClean = phone.replace(/[^\d]/g, "");
-    if (phoneClean.length < 10) {
-      setMessage("⚠️ Invalid phone number."); return;
+    // Normalize phone by removing spaces, dashes and parentheses but keep leading + if present
+    const phoneNormalized = phone.replace(/[\s\-()]/g, "");
+    // Accept optional leading + and 10-15 digits total
+    const phoneRegex = /^\+?\d{10,15}$/;
+    if (!phoneRegex.test(phoneNormalized)) {
+      setMessage("⚠️ Invalid phone number. Use digits, optional leading +, 10-15 characters."); return;
     }
 
     if (password.length < 6) {
@@ -182,11 +192,53 @@ function App() {
     if (!captchaOk) {
       setMessage("⚠️ Confirm captcha before registration."); return;
     }
-    setMessage("🎉 Registration successful! Please login.");
-    setTimeout(() => {
-      setPage("login");
-      clearAuthForms();
-    }, 1500);
+
+    // Prepare payload for backend registration
+    // Backend expects: username, password, first_name, last_name, email, phone, role_code, status_code
+    const payload = {
+      username: username.trim(),
+      password,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      email: email.trim(),
+      phone: phoneNormalized,
+      // Use default codes expected by the backend user manager/fixtures
+      role_code: 'USER',
+      status_code: 'PENDING_VERIFICATION',
+    };
+
+    (async () => {
+      setAuthLoading(true);
+      setMessage('');
+      try {
+        const resp = await api.post('/api/users/api/register/', payload);
+        // success
+        setMessage('🎉 Registration successful! Please login.');
+        setTimeout(() => {
+          setPage('login');
+          clearAuthForms();
+        }, 1200);
+      } catch (err) {
+        // show server-provided error if available
+        // eslint-disable-next-line no-console
+        console.error('Registration error:', err);
+        if (err && err.data) {
+          // err.data may be dict of field errors or message
+          if (typeof err.data === 'string') setMessage(`❌ ${err.data}`);
+          else if (err.data.detail) setMessage(`❌ ${err.data.detail}`);
+          else {
+            // flatten first field error
+            const firstKey = Object.keys(err.data)[0];
+            const firstVal = err.data[firstKey];
+            setMessage(`❌ ${firstKey}: ${Array.isArray(firstVal) ? firstVal.join(', ') : firstVal}`);
+          }
+        } else {
+          setMessage(`❌ ${err.message || 'Registration failed'}`);
+        }
+      } finally {
+        setAuthLoading(false);
+      }
+    })();
   };
 
   // Xử lý quên mật khẩu (Giữ nguyên)
@@ -212,6 +264,10 @@ function App() {
     setProfileName(fakeUser.name);
     setProfileEmail(fakeUser.email);
     setUserRole(null); // Reset role
+
+    // Clear stored tokens
+    try { api.clearToken(); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem('access'); localStorage.removeItem('refresh'); localStorage.removeItem('token'); } catch (e) { /* ignore */ }
 
     // Chuyển về trang đăng nhập
     setPage("login");
@@ -888,7 +944,14 @@ function App() {
                 </div>
               </div>
               <label>Phone number (At least 10 numbers length)</label>
-              <input type="tel" placeholder="Your phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <input
+                type="tel"
+                placeholder="Your phone number (e.g. +84912345678 or 0912345678)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                pattern="^\+?\d{10,15}$"
+                title="Phone must be 10-15 digits, optional leading +, no letters"
+              />
               <label>Username (3~8 characters, do not include special characters & spaces)</label>
               <input type="text" placeholder="Your username" value={username} onChange={(e) => setUsername(e.target.value)} />
               <label>Email</label>
