@@ -45,12 +45,6 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/jobs" className="text-sm font-medium hover:text-primary transition-colors">
-              Việc làm
-            </Link>
-            <Link to="/about" className="text-sm font-medium hover:text-primary transition-colors">
-              Về chúng tôi
-            </Link>
             {user?.role === 'employer' && (
               <Link to="/employer/post-job" className="text-sm font-medium hover:text-primary transition-colors">
                 Đăng tin
@@ -58,7 +52,8 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex-1" />
+          <div className="ml-auto flex items-center gap-3 shrink-0">
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -96,10 +91,15 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate('/login')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/login')}
+                >
                   Đăng nhập
                 </Button>
-                <Button onClick={() => navigate('/register')}>
+                <Button
+                  onClick={() => navigate('/register')}
+                >
                   Đăng ký
                 </Button>
               </>

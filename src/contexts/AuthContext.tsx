@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type UserRole = 'jobseeker' | 'employer' | 'admin';
+export type UserRole = 'user' | 'admin';
 
 export interface User {
   id: string;
@@ -10,12 +10,24 @@ export interface User {
   avatar?: string;
   company?: string;
   cvUrl?: string;
+  phone?: string;
+  gender?: 'male' | 'female';
+  dob?: string; // "YYYY-MM-DD"
 }
+
+type RegisterInput = {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  gender?: 'male' | 'female';
+  dob?: string; // "YYYY-MM-DD"
+};
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string, role: UserRole, company?: string) => Promise<boolean>;
+  register: (data: RegisterInput) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => void;
   isAuthenticated: boolean;
@@ -35,14 +47,14 @@ const initializeUsers = () => {
         id: '1',
         email: 'jobseeker@demo.com',
         name: 'Nguyễn Văn A',
-        role: 'jobseeker',
+        role: 'user',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jobseeker',
       },
       {
         id: '2',
         email: 'employer@demo.com',
         name: 'Công ty ABC',
-        role: 'employer',
+        role: 'user',
         company: 'Công ty TNHH ABC',
         avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=ABC',
       },
@@ -77,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     const users: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const passwords = JSON.parse(localStorage.getItem('jobfinder_passwords') || '{}');
-    
+
     const foundUser = users.find(u => u.email === email);
     if (foundUser && passwords[email] === password) {
       setUser(foundUser);
@@ -87,35 +99,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    name: string,
-    role: UserRole,
-    company?: string
-  ): Promise<boolean> => {
+  const register = async (data: RegisterInput): Promise<boolean> => {
     const users: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const passwords = JSON.parse(localStorage.getItem('jobfinder_passwords') || '{}');
-    
-    if (users.find(u => u.email === email)) {
-      return false;
-    }
+
+    if (users.find(u => u.email === data.email)) return false;
 
     const newUser: User = {
       id: Date.now().toString(),
-      email,
-      name,
-      role,
-      company,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      email: data.email,
+      name: data.name,
+      role: 'user',
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+      phone: data.phone,
+      gender: data.gender,
+      dob: data.dob,
     };
 
     users.push(newUser);
-    passwords[email] = password;
-    
+    passwords[data.email] = data.password;
+
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
     localStorage.setItem('jobfinder_passwords', JSON.stringify(passwords));
-    
+
     setUser(newUser);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
     return true;
@@ -128,11 +134,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProfile = (data: Partial<User>) => {
     if (!user) return;
-    
+
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-    
+
     const users: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
     localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));

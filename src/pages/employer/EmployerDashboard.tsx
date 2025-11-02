@@ -17,7 +17,7 @@ const EmployerDashboard = () => {
   const { toast } = useToast();
 
   const employerJobs = user ? getJobsByEmployer(user.id) : [];
-  const jobApplications = applications.filter(app => 
+  const jobApplications = applications.filter(app =>
     employerJobs.some(job => job.id === app.jobId)
   );
 
@@ -50,7 +50,7 @@ const EmployerDashboard = () => {
     return job?.title || 'Unknown';
   };
 
-  if (!user || user.role !== 'employer') {
+  if (!user || user.role !== 'user') {
     navigate('/');
     return null;
   }
@@ -58,7 +58,7 @@ const EmployerDashboard = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      
+
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex items-center justify-between mb-8">
@@ -145,15 +145,15 @@ const EmployerDashboard = () => {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => navigate(`/jobs/${job.id}`)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => handleDeleteJob(job.id)}
                           >

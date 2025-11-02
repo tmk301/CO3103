@@ -65,7 +65,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/register" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Đăng ký nhà tuyển dụng
+                  Đăng ký tài khoản
                 </Link>
               </li>
             </ul>

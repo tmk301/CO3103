@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
@@ -14,6 +14,7 @@ const Login = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,7 +22,7 @@ const Login = () => {
     setLoading(true);
 
     const success = await login(email, password);
-    
+
     if (success) {
       toast({
         title: "Đăng nhập thành công!",
@@ -35,7 +36,7 @@ const Login = () => {
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -44,9 +45,15 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-hero">
-              <Briefcase className="h-7 w-7 text-white" />
-            </div>
+            <Link
+              to="/"
+              aria-label="Về trang chủ JobFinder"
+              className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-hero
+               shadow-md hover:shadow-lg focus-visible:outline-none
+               focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2"
+            >
+              <Briefcase className="h-7 w-7 text-white" aria-hidden="true" />
+            </Link>
           </div>
           <CardTitle className="text-2xl">Đăng nhập</CardTitle>
           <CardDescription>
@@ -60,7 +67,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="Email đã đăng ký tài khoản"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -68,14 +75,25 @@ const Login = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPw ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-slate-500 hover:text-slate-700"
+                  aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
@@ -83,6 +101,7 @@ const Login = () => {
             </Button>
           </form>
 
+          {/*
           <div className="mt-6 space-y-4">
             <div className="text-center text-sm text-muted-foreground">
               Tài khoản demo:
@@ -93,7 +112,7 @@ const Login = () => {
               <div><strong>Admin:</strong> admin@demo.com / admin123</div>
             </div>
           </div>
-
+*/}
           <div className="mt-6 text-center text-sm">
             Chưa có tài khoản?{' '}
             <Link to="/register" className="text-primary hover:underline font-medium">

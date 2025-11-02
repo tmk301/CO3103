@@ -26,18 +26,18 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-hero py-20 md:py-32">
           <div className="absolute inset-0 bg-grid-white/10" />
           <div className="container relative mx-auto px-4">
-            <div className="mx-auto max-w-3xl text-center text-white">
-              <h1 className="mb-6 text-4xl font-bold md:text-5xl lg:text-6xl">
+            <div className="mx-auto max-w-3xl lg:max-w-5xl text-center text-white">
+              <h1 className="mb-6 text-4xl font-bold md:text-5xl lg:text-6xl lg:whitespace-nowrap tracking-tight">
                 Tìm công việc mơ ước của bạn
               </h1>
               <p className="mb-8 text-lg md:text-xl opacity-90">
-                Hàng ngàn cơ hội việc làm đang chờ đón bạn
+                Hàng ngàn cơ hội việc làm đang chờ đón bạn!
               </p>
 
               {/* Search Box */}
@@ -49,7 +49,7 @@ const Index = () => {
                       placeholder="Vị trí, công ty..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
-                      className="border-0 focus-visible:ring-0"
+                      className="border-0 focus-visible:ring-0 text-slate-900 placeholder:text-slate-500 caret-slate-900"
                       onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
@@ -59,7 +59,7 @@ const Index = () => {
                       placeholder="Địa điểm"
                       value={searchLocation}
                       onChange={(e) => setSearchLocation(e.target.value)}
-                      className="border-0 focus-visible:ring-0"
+                      className="border-0 focus-visible:ring-0 text-slate-900 placeholder:text-slate-500 caret-slate-900"
                       onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
@@ -145,8 +145,8 @@ const Index = () => {
             <p className="text-lg mb-8 opacity-90">
               Đăng tin tuyển dụng và tìm kiếm ứng viên phù hợp
             </p>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="secondary"
               onClick={() => navigate('/register')}
             >
