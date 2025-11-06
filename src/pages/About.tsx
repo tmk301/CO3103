@@ -7,9 +7,9 @@ const About = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      
+
       <main className="flex-1">
-        <section className="bg-gradient-hero py-20 text-white">
+        <section className="bg-gradient-hero pt-28 md:pt-32 pb-16 text-white">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl font-bold mb-4">Về JobFinder</h1>
             <p className="text-lg opacity-90 max-w-2xl mx-auto">

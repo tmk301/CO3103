@@ -19,6 +19,7 @@ export interface Job {
   employerId: string;
   status: JobStatus;
   applications?: Application[];
+  contactEmail?: string;
 }
 
 export interface Application {
@@ -30,7 +31,7 @@ export interface Application {
   cvUrl?: string;
   coverLetter: string;
   appliedDate: string;
-  status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 interface JobsContextType {
@@ -39,10 +40,14 @@ interface JobsContextType {
   addJob: (job: Omit<Job, 'id' | 'postedDate' | 'status'>) => void;
   updateJob: (id: string, updates: Partial<Job>) => void;
   deleteJob: (id: string) => void;
+  deleteJobsByStatus?: (statuses: JobStatus[]) => void;
+  removeJobsByOwner: (ownerId: string) => void;
   applyToJob: (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => void;
   getJobById: (id: string) => Job | undefined;
   getJobsByEmployer: (employerId: string) => Job[];
   getUserApplications: (userId: string) => Application[];
+  approveApplication: (appId: string) => void;
+  rejectApplication: (appId: string) => void;
 }
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
@@ -55,6 +60,7 @@ const demoJobs: Job[] = [
     id: '1',
     title: 'Senior Frontend Developer',
     company: 'Tech Corp Vietnam',
+    contactEmail: 'hr@techcorp.vn',
     companyLogo: 'https://api.dicebear.com/7.x/initials/svg?seed=TCV',
     location: 'Hà Nội',
     salary: '25-35 triệu',
@@ -71,6 +77,7 @@ const demoJobs: Job[] = [
     id: '2',
     title: 'Backend Developer (Node.js)',
     company: 'Startup XYZ',
+    contactEmail: 'talent@startupxyz.com',
     companyLogo: 'https://api.dicebear.com/7.x/initials/svg?seed=XYZ',
     location: 'TP. Hồ Chí Minh',
     salary: '20-30 triệu',
@@ -87,6 +94,7 @@ const demoJobs: Job[] = [
     id: '3',
     title: 'Marketing Manager',
     company: 'Digital Agency',
+    contactEmail: 'dagency@mkt.com',
     companyLogo: 'https://api.dicebear.com/7.x/initials/svg?seed=DA',
     location: 'Đà Nẵng',
     salary: '15-25 triệu',
@@ -103,6 +111,7 @@ const demoJobs: Job[] = [
     id: '4',
     title: 'UI/UX Designer',
     company: 'Design Studio',
+    contactEmail: 'ds@uiux.com',
     companyLogo: 'https://api.dicebear.com/7.x/initials/svg?seed=DS',
     location: 'Hà Nội',
     salary: '15-20 triệu',
@@ -127,6 +136,7 @@ const initializeJobs = () => {
     localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([]));
   }
 };
+
 
 export const JobsProvider = ({ children }: { children: ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -161,14 +171,31 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateJob = (id: string, updates: Partial<Job>) => {
-    const updatedJobs = jobs.map(job => 
+    const updatedJobs = jobs.map(job =>
       job.id === id ? { ...job, ...updates } : job
     );
     saveJobs(updatedJobs);
   };
 
   const deleteJob = (id: string) => {
-    saveJobs(jobs.filter(job => job.id !== id));
+    const nextJobs = jobs.filter(job => job.id !== id);
+    const nextApps = applications.filter(app => app.jobId !== id);
+    saveJobs(nextJobs);
+    saveApplications(nextApps);
+  };
+
+  const deleteJobsByStatus = (statuses: JobStatus[]) => {
+    const keepJobs = jobs.filter(j => !statuses.includes(j.status));
+    const keepJobIds = new Set(keepJobs.map(j => j.id));
+    const keepApps = applications.filter(a => keepJobIds.has(a.jobId));
+
+    saveJobs(keepJobs);
+    saveApplications(keepApps);
+  };
+
+  const removeJobsByOwner = (ownerId: string) => {
+    const newJobs = jobs.filter(j => j.employerId !== ownerId);
+    saveJobs(newJobs);
   };
 
   const applyToJob = (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => {
@@ -181,12 +208,23 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     saveApplications([...applications, newApplication]);
   };
 
+  const updateApplicationStatus = (appId: string, status: Application['status']) => {
+    setApplications(prev => {
+      const next = prev.map(a => a.id === appId ? { ...a, status } : a);
+      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const approveApplication = (appId: string) => updateApplicationStatus(appId, 'approved');
+  const rejectApplication = (appId: string) => updateApplicationStatus(appId, 'rejected');
+
   const getJobById = (id: string) => jobs.find(job => job.id === id);
 
-  const getJobsByEmployer = (employerId: string) => 
+  const getJobsByEmployer = (employerId: string) =>
     jobs.filter(job => job.employerId === employerId);
 
-  const getUserApplications = (userId: string) => 
+  const getUserApplications = (userId: string) =>
     applications.filter(app => app.userId === userId);
 
   return (
@@ -197,10 +235,14 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         addJob,
         updateJob,
         deleteJob,
+        deleteJobsByStatus,
+        removeJobsByOwner,
         applyToJob,
         getJobById,
         getJobsByEmployer,
         getUserApplications,
+        approveApplication,
+        rejectApplication,
       }}
     >
       {children}

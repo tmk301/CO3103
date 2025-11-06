@@ -16,6 +16,8 @@ import PostJob from "./pages/employer/PostJob";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import Contact from "./pages/Contact";
+import Policy from "./pages/Policy";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="/employer/post-job" element={<PostJob />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/policy" element={<Policy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

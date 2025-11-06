@@ -80,10 +80,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     initializeUsers();
-    const savedAuth = localStorage.getItem(STORAGE_KEY);
-    if (savedAuth) {
-      setUser(JSON.parse(savedAuth));
+    // MIGRATE: chuyển 'jobseeker' | 'employer' => 'user'
+    const raw = localStorage.getItem(USERS_KEY);
+    if (raw) {
+      const users: User[] = JSON.parse(raw);
+      let changed = false;
+      const mapped = users.map(u => {
+        if ((u as any).role === 'jobseeker' || (u as any).role === 'employer') {
+          changed = true;
+          return { ...u, role: 'user' as const };
+        }
+        return u;
+      });
+      if (changed) localStorage.setItem(USERS_KEY, JSON.stringify(mapped));
     }
+    // Khôi phục phiên đăng nhập nếu có
+    const savedAuth = localStorage.getItem(STORAGE_KEY);
+    if (savedAuth) setUser(JSON.parse(savedAuth));
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {

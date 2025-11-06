@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Briefcase, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Briefcase, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -24,33 +24,23 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (!user) return '/';
     switch (user.role) {
-      case 'employer':
+      case 'user':
         return '/employer/dashboard';
       case 'admin':
         return '/admin/dashboard';
-      default:
-        return '/profile';
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="fixed top-0 z-50 w-full border-b bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-hero">
               <Briefcase className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-bold text-primary">JobFinder</span>
           </Link>
-
-          <div className="hidden md:flex items-center space-x-6">
-            {user?.role === 'employer' && (
-              <Link to="/employer/post-job" className="text-sm font-medium hover:text-primary transition-colors">
-                Đăng tin
-              </Link>
-            )}
-          </div>
 
           <div className="flex-1" />
           <div className="ml-auto flex items-center gap-3 shrink-0">
@@ -58,7 +48,7 @@ const Navbar = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar>
+                    <Avatar className="h-10 w-10 ring-2 ring-primary ring-offset-2 ring-offset-white">
                       <AvatarImage src={user?.avatar} alt={user?.name} />
                       <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
@@ -76,12 +66,12 @@ const Navbar = () => {
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </DropdownMenuItem>
-                  {user?.role === 'jobseeker' && (
-                    <DropdownMenuItem onClick={() => navigate('/profile')}>
-                      <User className="mr-2 h-4 w-4" />
-                      Hồ sơ
-                    </DropdownMenuItem>
-                  )}
+
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Hồ sơ
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />

@@ -12,23 +12,98 @@ import { Search, SlidersHorizontal } from 'lucide-react';
 const Jobs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { jobs } = useJobs();
-  
+
   const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
   const [location, setLocation] = useState(searchParams.get('location') || '');
   const [jobType, setJobType] = useState(searchParams.get('type') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'all');
   const [salaryRange, setSalaryRange] = useState(searchParams.get('salary') || 'all');
 
-  const categories = ['IT - Phần mềm', 'Marketing', 'Design', 'Sales', 'Kế toán', 'Nhân sự'];
-  const salaryRanges = ['Dưới 10 triệu', '10-15 triệu', '15-20 triệu', '20-30 triệu', 'Trên 30 triệu'];
+  const categories = [
+    'IT - Phần mềm', 'Data', 'AI/ML', 'An ninh mạng',
+    'Marketing', 'Content', 'Báo chí - Truyền thông',
+    'Design', 'UX/UI',
+    'Sales', 'Chăm sóc khách hàng',
+    'Kế toán', 'Tài chính - Ngân hàng', 'Pháp lý',
+    'Nhân sự', 'QA/QC',
+    'Sản xuất', 'Logistics', 'Xây dựng', 'Bất động sản', 'Giáo dục', 'Y tế'
+  ];
+  const salaryRanges = ['Dưới 5 triệu', '5-10 triệu', '10-15 triệu', '15-20 triệu', '20-30 triệu', 'Trên 30 triệu'];
+
+  // Chuẩn hoá chuỗi lương -> { min, max } theo đơn vị "triệu"
+  const parseSalary = (s: string) => {
+    const lower = s.toLowerCase().trim();
+
+    // helper: chuyển "10,5" -> "10.5", rồi parseFloat
+    const toNum = (x: string) => parseFloat(x.replace(',', '.'));
+
+    // Dạng "20-30 triệu", "10.5 - 12,5 triệu"
+    const range = lower.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)/);
+    if (range) {
+      const a = toNum(range[1]);
+      const b = toNum(range[2]);
+      return { min: Math.min(a, b), max: Math.max(a, b) };
+    }
+
+    // Dạng "15 triệu", "12tr", "10.5 triệu"
+    const single = lower.match(/(\d+(?:[.,]\d+)?)\s*(triệu|tr)/);
+    if (single) {
+      const v = toNum(single[1]);
+      return { min: v, max: v };
+    }
+
+    // Dưới/Ít hơn X (vd: "Dưới 5 triệu", "Ít hơn 2tr", "Dưới 5,5")
+    const below = lower.match(/(dưới|ít hơn)\s*(\d+(?:[.,]\d+)?)/);
+    if (below) {
+      const v = toNum(below[2]);
+      return { min: 0, max: v };
+    }
+
+    // Trên/Nhiều hơn X (vd: "Trên 30 triệu", "Nhiều hơn 30tr", "Trên 30,5")
+    const above = lower.match(/(trên|nhiều hơn)\s*(\d+(?:[.,]\d+)?)/);
+    if (above) {
+      const v = toNum(above[2]);
+      return { min: v, max: Infinity };
+    }
+
+    // Không rõ -> cho qua
+    return { min: 0, max: Infinity };
+  };
+
+
+  // Kiểm tra jobSalary có thuộc khoảng lựa chọn không
+  const matchSalary = (jobSalary: string, filter: string) => {
+    if (filter === 'all') return true;
+
+    const { min, max } = parseSalary(jobSalary);
+
+    switch (filter) {
+      case 'Dưới 5 triệu':
+        return max < 5;
+      case '5-10 triệu':
+        return min < 10 && max >= 5;
+      case '10-15 triệu':
+        return min < 15 && max >= 10;
+      case '15-20 triệu':
+        return min < 20 && max >= 15;
+      case '20-30 triệu':
+        return min < 30 && max >= 20;
+      case 'Trên 30 triệu':
+        return min >= 30;
+      default:
+        return true;
+    }
+  };
 
   const filteredJobs = jobs.filter(job => {
     if (job.status !== 'approved') return false;
-    if (keyword && !job.title.toLowerCase().includes(keyword.toLowerCase()) && 
-        !job.company.toLowerCase().includes(keyword.toLowerCase())) return false;
+    if (keyword && !job.title.toLowerCase().includes(keyword.toLowerCase()) &&
+      !job.company.toLowerCase().includes(keyword.toLowerCase())) return false;
     if (location && !job.location.toLowerCase().includes(location.toLowerCase())) return false;
     if (jobType !== 'all' && job.type !== jobType) return false;
     if (category !== 'all' && job.category !== category) return false;
+    if (salaryRange !== 'all' && !matchSalary(job.salary, salaryRange)) return false;
+
     // Salary filtering logic can be enhanced
     return true;
   });
@@ -55,7 +130,7 @@ const Jobs = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      
+      <div className="h-16" />
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4">
           {/* Filters */}
@@ -64,12 +139,12 @@ const Jobs = () => {
               <SlidersHorizontal className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Bộ lọc tìm kiếm</h2>
             </div>
-            
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="text-sm font-medium mb-2 block">Từ khóa</label>
                 <Input
-                  placeholder="Vị trí, công ty..."
+                  placeholder="Tên việc; Tên Công ty / Tổ chức..."
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}

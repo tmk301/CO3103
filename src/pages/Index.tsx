@@ -7,12 +7,14 @@ import JobCard from '@/components/JobCard';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Search, MapPin, Briefcase, Users, Building2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const { jobs } = useJobs();
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
+  const { user } = useAuth();
 
   const approvedJobs = jobs.filter(job => job.status === 'approved').slice(0, 6);
 
@@ -29,7 +31,7 @@ const Index = () => {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-hero py-20 md:py-32">
+        <section className="relative overflow-hidden bg-gradient-hero pt-28 md:pt-36 pb-20">
           <div className="absolute inset-0 bg-grid-white/10" />
           <div className="container relative mx-auto px-4">
             <div className="mx-auto max-w-3xl lg:max-w-5xl text-center text-white">
@@ -82,7 +84,7 @@ const Index = () => {
                     <Briefcase className="h-6 w-6 text-primary" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-primary">{jobs.length}+</div>
+                <div className="text-3xl font-bold text-primary">2K+</div>
                 <div className="text-sm text-muted-foreground">Việc làm</div>
               </div>
               <div className="text-center">
@@ -147,10 +149,11 @@ const Index = () => {
             </p>
             <Button
               size="lg"
-              variant="secondary"
-              onClick={() => navigate('/register')}
+              variant="outline"
+              className="bg-white text-primary border-primary hover:bg-muted"
+              onClick={() => navigate(user ? '/employer/post-job' : '/register')}
             >
-              Đăng ký ngay
+              Đăng tin ngay
             </Button>
           </div>
         </section>

@@ -8,9 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { 
-  MapPin, DollarSign, Briefcase, Clock, Building2, 
-  CheckCircle2, ArrowLeft 
+import {
+  MapPin, DollarSign, Briefcase, Clock, Building2,
+  CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -48,10 +48,10 @@ const JobDetail = () => {
       navigate('/login');
       return;
     }
-    if (user?.role !== 'jobseeker') {
+    if (user?.role !== 'user') {
       toast({
         title: "Lỗi",
-        description: "Chỉ ứng viên mới có thể ứng tuyển",
+        description: "Chỉ users mới có thể ứng tuyển",
         variant: "destructive",
       });
       return;
@@ -91,11 +91,11 @@ const JobDetail = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      
+
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 max-w-5xl">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
             className="mb-6"
           >
@@ -153,7 +153,7 @@ const JobDetail = () => {
               {/* Description */}
               <section className="mb-6">
                 <h2 className="text-xl font-semibold mb-3">Mô tả công việc</h2>
-                <p className="text-muted-foreground whitespace-pre-line">{job.description}</p>
+                <p className="text-muted-foreground whitespace-pre-line break-words leading-relaxed">{job.description}</p>
               </section>
 
               {/* Requirements */}
@@ -162,7 +162,7 @@ const JobDetail = () => {
                 <ul className="space-y-2">
                   {job.requirements.map((req, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 break-words" />
                       <span>{req}</span>
                     </li>
                   ))}
@@ -171,7 +171,7 @@ const JobDetail = () => {
 
               {/* Benefits */}
               <section>
-                <h2 className="text-xl font-semibold mb-3">Quyền lợi</h2>
+                <h2 className="text-xl font-semibold mb-3 break-words">Quyền lợi</h2>
                 <ul className="space-y-2">
                   {job.benefits.map((benefit, index) => (
                     <li key={index} className="flex items-start gap-2">
@@ -184,11 +184,33 @@ const JobDetail = () => {
 
               <Separator className="my-6" />
 
+              {/* Email */}
+              {job.contactEmail && (
+                <section className="mb-2">
+                  <h2 className="text-xl font-semibold mb-3">Email liên hệ</h2>
+                  <a
+                    href={`mailto:${job.contactEmail}`}
+                    className="text-primary underline underline-offset-4 break-words"
+                  >
+                    {job.contactEmail}
+                  </a>
+                </section>
+              )}
+
+              <Separator className="my-6" />
+
               <div className="text-center">
-                <Button size="lg" onClick={handleApply} className="min-w-[200px]">
-                  Ứng tuyển ngay
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate(-1)}
+                  className="min-w-[200px]"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Quay lại
                 </Button>
               </div>
+
             </CardContent>
           </Card>
         </div>
