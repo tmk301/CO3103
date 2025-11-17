@@ -43,8 +43,9 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
 class GenderViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Gender.objects.all().order_by('code')
     serializer_class = GenderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    # Allow anonymous read access so frontend can load gender lookup values
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
 class StatusViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Status.objects.all().order_by('code')
@@ -143,19 +144,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         return Response(self.get_serializer(instance if 'instance' in locals() else profile).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
-
-# Custom SimpleJWT token view to update last_login when a token is issued.
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         try:
-            # Update last_login for the authenticated user
             update_last_login(None, self.user)
         except Exception:
-            # Do not fail authentication if updating last_login fails
             pass
         return data
-
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
