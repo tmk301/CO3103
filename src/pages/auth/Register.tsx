@@ -15,16 +15,35 @@ const Register = () => {
   const { register } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
+    username: '',
     name: '',
     dobDay: '' as number | '',
     dobMonth: '' as number | '',
     dobYear: '' as number | '',
-    gender: '' as 'male' | 'female' | '',
+    gender: '' as string | '',
     phone: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+
+  const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000';
+  const [genders, setGenders] = useState<Array<{ code: string; name: string }>>([]);
+
+  // Load gender options from backend so codes are authoritative
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${API_BASE}/api/users/genders/`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        if (Array.isArray(data)) setGenders(data.map((g: any) => ({ code: g.code, name: g.name })));
+      })
+      .catch(() => {
+        // ignore; fallback to built-in options below
+      });
+    return () => { mounted = false; };
+  }, []);
 
   // Giới hạn năm sinh
   const MAX_YEAR = 2007;
@@ -125,11 +144,12 @@ const Register = () => {
       setLoading(true);
 
       const success = await register({
+        username: formData.username.trim(),
         email: formData.email.trim(),
         password: formData.password,
         name: formData.name.trim(),
         phone: formData.phone.trim(),
-        gender: formData.gender as 'male' | 'female',
+        gender: formData.gender, // pass backend gender code (e.g. 'MALE')
         dob: dobISO,
       });
 
@@ -187,6 +207,20 @@ const Register = () => {
                 required
                 inputMode="text"
                 autoComplete="name"
+                className="text-slate-900 placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Tên đăng nhập</Label>
+              <Input
+                id="username"
+                placeholder="Tên đăng nhập (ví dụ: khue123)"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+                inputMode="text"
+                autoComplete="username"
                 className="text-slate-900 placeholder:text-slate-400"
               />
             </div>
@@ -253,14 +287,21 @@ const Register = () => {
                 <Label>Giới tính</Label>
                 <Select
                   value={formData.gender}
-                  onValueChange={(v) => setFormData({ ...formData, gender: v as 'male' | 'female' })}
+                  onValueChange={(v) => setFormData({ ...formData, gender: v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Nam</SelectItem>
-                    <SelectItem value="female">Nữ</SelectItem>
+                    {genders.length > 0 ? (
+                      genders.map((g) => <SelectItem key={g.code} value={g.code}>{g.name}</SelectItem>)
+                    ) : (
+                      // fallback options
+                      <>
+                        <SelectItem value="MALE">Nam</SelectItem>
+                        <SelectItem value="FEMALE">Nữ</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

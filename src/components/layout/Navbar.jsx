@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Briefcase, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -23,12 +24,11 @@ const Navbar = () => {
 
   const getDashboardLink = () => {
     if (!user) return '/';
-    switch (user.role) {
-      case 'user':
-        return '/employer/dashboard';
-      case 'admin':
-        return '/admin/dashboard';
-    }
+    // Normalize role: backend may return codes like 'USER' or 'ADMIN'
+    const role = (user.role || '').toString().toLowerCase();
+    if (role.includes('admin')) return '/admin/dashboard';
+    // Default: navigate to homepage (product expects Dashboard => home)
+    return '/';
   };
 
   return (
@@ -50,7 +50,7 @@ const Navbar = () => {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 ring-2 ring-primary ring-offset-2 ring-offset-white">
                       <AvatarImage src={user?.avatar} alt={user?.name} />
-                      <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{(user?.name && user.name.charAt(0)) || (user?.email && user.email.charAt(0)) || ''}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -62,15 +62,21 @@ const Navbar = () => {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
+                  {/* show Dashboard only if we're not already on the computed dashboard route */}
+                  {location.pathname !== getDashboardLink() && (
+                    <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </DropdownMenuItem>
+                  )}
 
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Hồ sơ
-                  </DropdownMenuItem>
+                  {/* show Profile only if not on /profile */}
+                  {location.pathname !== '/profile' && (
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      Hồ sơ
+                    </DropdownMenuItem>
+                  )}
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>

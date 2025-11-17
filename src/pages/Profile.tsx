@@ -20,16 +20,18 @@ const Profile = () => {
   const { user, updateProfile } = useAuth();
 
   const [search] = useSearchParams();
-  const viewedId = search.get('id') || user.id;
+  // avoid accessing user.id when user may be null during initial render
+  const viewedIdParam = search.get('id');
 
-  // Lấy danh sách user lưu trong localStorage
+  // Lấy danh sách user lưu trong localStorage (legacy fallback)
   const allUsers = JSON.parse(localStorage.getItem('jobfinder_users') || '[]');
 
-  // User sẽ được hiển thị (ưu tiên theo viewedId)
-  const displayUser = allUsers.find((u: any) => u.id === viewedId) || user;
+  // Determine which user to display. Prefer explicit ?id= param, else current user
+  const viewedId = viewedIdParam || (user ? user.id : null);
+  const displayUser = (viewedId ? allUsers.find((u: any) => u.id === viewedId) : null) || user || null;
 
-  // Có phải đang xem chính mình không?
-  const isSelf = viewedId === user.id;
+  // Có phải đang xem chính mình không? (false if no current user)
+  const isSelf = Boolean(user && viewedId && user.id === viewedId);
 
   const { getUserApplications, jobs } = useJobs();
   const { toast } = useToast();
@@ -123,12 +125,17 @@ const Profile = () => {
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-6">
                     <Avatar className="h-24 w-24">
-                      <AvatarImage src={user.avatar} alt={displayUser.name} />
-                      <AvatarFallback className="text-2xl">{displayUser.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={displayUser?.avatar} alt={displayUser?.name || displayUser?.email} />
+                      <AvatarFallback className="text-2xl">
+                        {(() => {
+                          const name = displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email || '';
+                          return name ? name.charAt(0) : '';
+                        })()}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-xl font-semibold">{displayUser.name}</h3>
-                      <p className="text-muted-foreground">{displayUser.email}</p>
+                      <h3 className="text-xl font-semibold">{displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email}</h3>
+                      <p className="text-muted-foreground">{displayUser?.email}</p>
                     </div>
                   </div>
 
@@ -137,7 +144,7 @@ const Profile = () => {
                     <div className="grid gap-2">
                       <Label>Họ và tên</Label>
                       <Input
-                        value={displayUser?.name ?? ''}
+                        value={displayUser?.name ?? [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() ?? ''}
                         readOnly
                         disabled
                         className="pointer-events-none bg-muted/40"
@@ -161,7 +168,7 @@ const Profile = () => {
                       <div className="grid gap-2">
                         <Label>Giới tính</Label>
                         <Input
-                          value={displayUser?.gender === 'male' ? 'Nam' : displayUser?.gender === 'female' ? 'Nữ' : ''}
+                          value={displayUser?.gender === 'MALE' ? 'Nam' : displayUser?.gender === 'FEMALE' ? 'Nữ' : ''}
                           readOnly
                           disabled
                           className="pointer-events-none bg-muted/40"
