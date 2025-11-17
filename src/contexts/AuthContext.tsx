@@ -140,7 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await postJSON(`${API_BASE}/api/users/register/`, payload);
 
       // immediately obtain tokens and fetch profile
-      const tokenResp = await postJSON(`${API_BASE}/api/users/token/`, { username: data.email, password: data.password });
+      // use the username we sent to the backend (do not send email in place of username)
+      const tokenResp = await postJSON(`${API_BASE}/api/users/token/`, { username: payload.username, password: data.password });
       const access = tokenResp.access;
       const refresh = tokenResp.refresh;
 
