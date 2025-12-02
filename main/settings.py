@@ -44,9 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Project main
-    'main',
+    'main', 'jobfinder',
 
-    # Users
+    # Users (use AppConfig path to register custom user model)
     'users.apps.UsersConfig',
 ]
 

@@ -113,3 +113,7 @@ node_modules/
 
 # Migrations
 migrations/
+
+# Management
+
+management/
