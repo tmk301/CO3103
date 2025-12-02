@@ -35,6 +35,13 @@ const Index = () => {
   const [jobs, setJobs] = useState<JobForm[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Redirect admin to dashboard
+  useEffect(() => {
+    if (user && user.role?.toUpperCase() === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   // Fetch approved jobs from API
   useEffect(() => {
     const fetchJobs = async () => {

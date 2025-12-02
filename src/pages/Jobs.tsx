@@ -166,7 +166,7 @@ const Jobs = () => {
       if (salaryMax) params.set('salary_max', salaryMax);
       if (currency !== 'all') params.set('currency', currency);
       if (minPositions) params.set('min_positions', minPositions);
-      setSearchParams(params);
+      setSearchParams(params, { replace: true });
     }, 300); // 300ms debounce
     
     return () => clearTimeout(timer);
@@ -353,7 +353,7 @@ const Jobs = () => {
     setCurrency('all');
     setMinPositions('');
     setShowAdvanced(false);
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
   };
 
   return (

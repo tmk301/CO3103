@@ -76,6 +76,14 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   )}
 
+                  {/* show Quản lý tin đăng for admin users */}
+                  {isAdmin() && location.pathname !== '/admin/jobs' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin/jobs')}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Quản lý tin đăng
+                    </DropdownMenuItem>
+                  )}
+
                   {/* show Quản lý tài khoản for admin users */}
                   {isAdmin() && location.pathname !== '/admin/users' && (
                     <DropdownMenuItem onClick={() => navigate('/admin/users')}>
