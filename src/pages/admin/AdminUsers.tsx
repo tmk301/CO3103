@@ -1,5 +1,5 @@
 import { useAuth, API_BASE, getAccessToken } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserRound, CheckCircle, Clock, Ban, MoreVertical, ShieldX, Lock, AlertCircle } from 'lucide-react';
+import { UserRound, CheckCircle, Clock, Ban, MoreVertical, ShieldX, Lock, AlertCircle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from "react";
 
@@ -30,17 +30,34 @@ interface User {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   'ACTIVE': { label: 'Hoạt động', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-3 w-3" /> },
-  'INACTIVE': { label: 'Không hoạt động', color: 'bg-gray-100 text-gray-800', icon: <ShieldX className="h-3 w-3" /> },
+  'INACTIVE': { label: 'Vô hiệu hoá', color: 'bg-gray-100 text-gray-800', icon: <ShieldX className="h-3 w-3" /> },
   'PENDING_VERIFICATION': { label: 'Chờ xác minh', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
   'LOCKED': { label: 'Đã khoá', color: 'bg-orange-100 text-orange-800', icon: <Lock className="h-3 w-3" /> },
   'SUSPENDED': { label: 'Tạm ngưng', color: 'bg-red-100 text-red-800', icon: <AlertCircle className="h-3 w-3" /> },
   'BANNED': { label: 'Cấm', color: 'bg-red-200 text-red-900', icon: <Ban className="h-3 w-3" /> },
 };
 
+// Định nghĩa các action có thể thay đổi status
+const STATUS_ACTIONS = [
+  { status: 'ACTIVE', label: 'Kích hoạt', icon: <CheckCircle className="h-4 w-4 mr-2" /> },
+  { status: 'INACTIVE', label: 'Vô hiệu hoá', icon: <ShieldX className="h-4 w-4 mr-2" /> },
+  { status: 'LOCKED', label: 'Khoá', icon: <Lock className="h-4 w-4 mr-2" /> },
+  { status: 'SUSPENDED', label: 'Tạm ngưng', icon: <AlertCircle className="h-4 w-4 mr-2" /> },
+  { status: 'BANNED', label: 'Cấm', icon: <Ban className="h-4 w-4 mr-2" /> },
+];
+
 const AdminUsers = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Lấy tab từ URL, mặc định là 'pending'
+  const currentTab = searchParams.get('tab') || 'pending';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +97,17 @@ const AdminUsers = () => {
     u.status?.toUpperCase() !== 'ACTIVE'
   );
 
+  // Render dropdown items, ẩn status hiện tại
+  const renderStatusActions = (currentStatus: string | undefined, userId: number) => {
+    return STATUS_ACTIONS
+      .filter(action => action.status !== currentStatus?.toUpperCase())
+      .map(action => (
+        <DropdownMenuItem key={action.status} onClick={() => handleSetStatus(userId, action.status)}>
+          {action.icon} {action.label}
+        </DropdownMenuItem>
+      ));
+  };
+
   const getUserName = (u: User) => {
     const name = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
     return name || u.username || u.email;
@@ -115,6 +143,29 @@ const AdminUsers = () => {
       }
     } catch (e) {
       toast({ title: 'Lỗi', description: 'Không thể cập nhật', variant: 'destructive' });
+    }
+  };
+
+  const handleApproveAllUsers = async () => {
+    if (pendingVerification.length === 0) return;
+    try {
+      const token = await getAccessToken();
+      let successCount = 0;
+      for (const u of pendingVerification) {
+        const res = await fetch(`${API_BASE}/api/users/users/${u.id}/set-status/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ status: 'ACTIVE' }),
+        });
+        if (res.ok) successCount++;
+      }
+      toast({ title: "Đã duyệt toàn bộ", description: `Đã duyệt ${successCount}/${pendingVerification.length} người dùng` });
+      fetchUsers();
+    } catch (e) {
+      toast({ title: "Lỗi", description: "Không thể duyệt toàn bộ người dùng", variant: "destructive" });
     }
   };
 
@@ -174,21 +225,32 @@ const AdminUsers = () => {
             </Card>
           </div>
 
-          <Tabs defaultValue="pending" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="pending">Chờ xác minh ({pendingVerification.length})</TabsTrigger>
-              <TabsTrigger value="active">Hoạt động ({activeAccounts.length})</TabsTrigger>
-              <TabsTrigger value="other">Khác ({otherAccounts.length})</TabsTrigger>
-              <TabsTrigger value="admin">Admin ({adminAccounts.length})</TabsTrigger>
-            </TabsList>
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="pending">Chờ xác minh ({pendingVerification.length})</TabsTrigger>
+                <TabsTrigger value="active">Hoạt động ({activeAccounts.length})</TabsTrigger>
+                <TabsTrigger value="other">Khác ({otherAccounts.length})</TabsTrigger>
+                <TabsTrigger value="admin">Admin ({adminAccounts.length})</TabsTrigger>
+              </TabsList>
+              {currentTab === 'pending' && pendingVerification.length > 0 && (
+                <Button
+                  onClick={handleApproveAllUsers}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Duyệt toàn bộ ({pendingVerification.length})
+                </Button>
+              )}
+            </div>
 
             {/* Pending Verification */}
             <TabsContent value="pending" className="space-y-4">
               {pendingVerification.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Không có tài khoản nào chờ xác minh</div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {pendingVerification.map((u) => (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {pendingVerification.map((u) => (
                     <Card key={u.id}>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -204,6 +266,13 @@ const AdminUsers = () => {
                           </div>
                           <div className="flex gap-2">
                             <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => navigate(`/profile?id=${u.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
                               size="sm"
                               className="bg-green-600 hover:bg-green-700"
                               onClick={() => handleSetStatus(u.id, 'ACTIVE')}
@@ -218,20 +287,15 @@ const AdminUsers = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'SUSPENDED')}>
-                                  <AlertCircle className="h-4 w-4 mr-2" /> Tạm ngưng
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'BANNED')}>
-                                  <Ban className="h-4 w-4 mr-2" /> Cấm
-                                </DropdownMenuItem>
+                                {renderStatusActions(u.status, u.id)}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                    ))}
+                  </div>
               )}
             </TabsContent>
 
@@ -255,27 +319,25 @@ const AdminUsers = () => {
                               <div className="mt-1">{getStatusBadge(u.status)}</div>
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'INACTIVE')}>
-                                <ShieldX className="h-4 w-4 mr-2" /> Vô hiệu hoá
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'LOCKED')}>
-                                <Lock className="h-4 w-4 mr-2" /> Khoá
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'SUSPENDED')}>
-                                <AlertCircle className="h-4 w-4 mr-2" /> Tạm ngưng
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'BANNED')}>
-                                <Ban className="h-4 w-4 mr-2" /> Cấm
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => navigate(`/profile?id=${u.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {renderStatusActions(u.status, u.id)}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -304,24 +366,25 @@ const AdminUsers = () => {
                               <div className="mt-1">{getStatusBadge(u.status)}</div>
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'ACTIVE')}>
-                                <CheckCircle className="h-4 w-4 mr-2" /> Kích hoạt
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'PENDING_VERIFICATION')}>
-                                <Clock className="h-4 w-4 mr-2" /> Chờ xác minh
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSetStatus(u.id, 'BANNED')}>
-                                <Ban className="h-4 w-4 mr-2" /> Cấm
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => navigate(`/profile?id=${u.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {renderStatusActions(u.status, u.id)}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -350,6 +413,9 @@ const AdminUsers = () => {
                             {getStatusBadge(u.status)}
                           </div>
                         </div>
+                        <Button variant="outline" size="icon" onClick={() => navigate(`/profile?id=${u.id}`)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}

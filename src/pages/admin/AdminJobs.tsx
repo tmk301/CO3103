@@ -1,5 +1,5 @@
 import { useAuth, API_BASE, getAccessToken } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -33,8 +33,11 @@ interface JobForm {
   salary_to?: number;
   salary_currency?: string;
   display_salary_currency?: string;
+  salary_currency_symbol?: string;
   work_format?: string;
+  display_work_format?: string;
   job_type?: string;
+  display_job_type?: string;
   status: 'pending' | 'approved' | 'rejected';
   is_active: boolean;
   created_at: string;
@@ -45,6 +48,14 @@ const AdminJobs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Lấy tab từ URL, mặc định là 'pending'
+  const currentTab = searchParams.get('tab') || 'pending';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   const [jobs, setJobs] = useState<JobForm[]>([]);
   const [hiddenJobs, setHiddenJobs] = useState<JobForm[]>([]);
@@ -113,11 +124,33 @@ const AdminJobs = () => {
 
   const getSalary = (job: JobForm) => {
     if (!job.salary_from) return 'Thương lượng';
-    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    const symbol = job.salary_currency_symbol || job.display_salary_currency || job.salary_currency || '₫';
     if (job.salary_to) {
-      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+      return `Từ ${job.salary_from.toLocaleString()} đến ${job.salary_to.toLocaleString()} ${symbol}`;
     }
-    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+    return `Từ ${job.salary_from.toLocaleString()} ${symbol}`;
+  };
+
+  const handleApproveAll = async () => {
+    if (pendingJobs.length === 0) return;
+    try {
+      const token = await getAccessToken();
+      let successCount = 0;
+      for (const job of pendingJobs) {
+        const res = await fetch(`${API_BASE}/api/jobfinder/forms/${job.id}/approve/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+        });
+        if (res.ok) successCount++;
+      }
+      toast({ title: "Đã duyệt toàn bộ", description: `Đã duyệt ${successCount}/${pendingJobs.length} tin tuyển dụng` });
+      fetchJobs();
+    } catch (e) {
+      toast({ title: "Lỗi", description: "Không thể duyệt toàn bộ tin", variant: "destructive" });
+    }
   };
 
   const handleApprove = async (jobId: number) => {
@@ -296,32 +329,42 @@ const AdminJobs = () => {
             </Card>
           </div>
 
-          <Tabs defaultValue="pending" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="pending">Chờ duyệt</TabsTrigger>
-              <TabsTrigger value="approved">Đã duyệt</TabsTrigger>
-              <TabsTrigger value="rejected">Đã từ chối</TabsTrigger>
-              <TabsTrigger value="hidden">Đã ẩn</TabsTrigger>
-            </TabsList>
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="pending">Chờ duyệt</TabsTrigger>
+                <TabsTrigger value="approved">Đã duyệt</TabsTrigger>
+                <TabsTrigger value="rejected">Đã từ chối</TabsTrigger>
+                <TabsTrigger value="hidden">Đã ẩn</TabsTrigger>
+              </TabsList>
+              {currentTab === 'pending' && pendingJobs.length > 0 && (
+                <Button
+                  onClick={handleApproveAll}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Duyệt toàn bộ ({pendingJobs.length})
+                </Button>
+              )}
+            </div>
 
             <TabsContent value="pending" className="space-y-4">
               {pendingJobs.length === 0 ? (
                 <EmptyState text="Không có tin nào đang chờ duyệt" />
               ) : (
-                pendingJobs.map((job) => (
-                  <Card key={job.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg">{job.title}</h3>
+                  pendingJobs.map((job) => (
+                    <Card key={job.id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{job.title}</h3>
                             <Badge className="bg-warning/10 text-warning">Chờ duyệt</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{getCompanyName(job)}</p>
                           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <span>{getLocation(job)}</span>
                             <span>{getSalary(job)}</span>
-                            <span>{job.work_format}</span>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -351,7 +394,7 @@ const AdminJobs = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))
+                  ))
               )}
             </TabsContent>
 
@@ -362,19 +405,19 @@ const AdminJobs = () => {
                 approvedJobs.map((job) => (
                   <Card key={job.id}>
                     <CardContent className="p-6">
-                      <div className="flex items-center">
-                        <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-lg">{job.title}</h3>
                             <Badge className="bg-green-100 text-green-700">Đã duyệt</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{getCompanyName(job)}</p>
-                          <div className="mt-2 flex items-center gap-6 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <span>{getLocation(job)}</span>
                             <span>{getSalary(job)}</span>
                           </div>
                         </div>
-                        <div className="shrink-0 flex items-center gap-2">
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="icon"
@@ -405,19 +448,19 @@ const AdminJobs = () => {
                 rejectedJobs.map((job) => (
                   <Card key={job.id}>
                     <CardContent className="p-6">
-                      <div className="flex items-center">
-                        <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-lg">{job.title}</h3>
                             <Badge variant="destructive">Đã từ chối</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{getCompanyName(job)}</p>
-                          <div className="mt-2 flex items-center gap-6 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <span>{getLocation(job)}</span>
                             <span>{getSalary(job)}</span>
                           </div>
                         </div>
-                        <div className="shrink-0 flex items-center gap-2">
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="icon"
@@ -455,19 +498,19 @@ const AdminJobs = () => {
                 hiddenJobs.map((job) => (
                   <Card key={job.id} className="opacity-75">
                     <CardContent className="p-6">
-                      <div className="flex items-center">
-                        <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-lg">{job.title}</h3>
                             <Badge variant="secondary">Đã ẩn</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{getCompanyName(job)}</p>
-                          <div className="mt-2 flex items-center gap-6 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <span>{getLocation(job)}</span>
                             <span>{getSalary(job)}</span>
                           </div>
                         </div>
-                        <div className="shrink-0 flex items-center gap-2">
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="icon"

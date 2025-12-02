@@ -16,6 +16,7 @@ export interface User {
   phone?: string;
   gender?: string; // backend uses gender codes (e.g. 'MALE', 'FEMALE')
   dob?: string; // "YYYY-MM-DD"
+  status?: string; // account status (e.g. 'ACTIVE', 'PENDING_VERIFICATION')
 }
 
 type RegisterInput = {
@@ -28,12 +29,18 @@ type RegisterInput = {
   dob?: string; // "YYYY-MM-DD"
 };
 
+interface LoginResult {
+  success: boolean;
+  error?: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<LoginResult>;
   register: (data: RegisterInput) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -180,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (tokens) localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<LoginResult> => {
     try {
       // use username to obtain token
       const tokenResp = await postJSON(`${API_BASE}/api/users/token/`, { username, password });
@@ -212,11 +219,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
+        status: me.status,
       };
       saveUserAndTokens(u, { access, refresh });
-      return true;
-    } catch (err) {
-      return false;
+      return { success: true };
+    } catch (err: any) {
+      // Extract error message from response
+      // postJSON throws { status, data } where data contains the response body
+      const errorData = err?.data || err;
+      const errorMessage = errorData?.detail || errorData?.message || 'Email hoặc mật khẩu không chính xác';
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -288,6 +300,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
+        status: me.status,
       };
 
       saveUserAndTokens(u, { access, refresh });
@@ -382,12 +395,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
+        status: me.status,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       setUser(u);
       return true;
     } catch (err) {
       return false;
+    }
+  };
+
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const freshTok = localStorage.getItem(TOKEN_KEY);
+      const freshAccess = freshTok ? JSON.parse(freshTok).access : null;
+      if (!freshAccess) return;
+      
+      const me = await getJSON(`${API_BASE}/api/users/me/`, freshAccess);
+      try {
+        const profile = await getJSON(`${API_BASE}/api/users/profiles/me/`, freshAccess);
+        if (profile) {
+          me.dob = profile.dob ?? me.dob;
+          me.gender = profile.gender ?? me.gender;
+        }
+      } catch (e) {
+        // ignore
+      }
+      const fullNameR = [me.first_name, me.last_name].filter(Boolean).join(' ').trim();
+      const avatarR = me.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(me.email || me.username || String(me.id))}`;
+      const u: User = {
+        id: String(me.id),
+        email: me.email,
+        username: me.username,
+        first_name: me.first_name,
+        last_name: me.last_name,
+        role: me.role ? String(me.role).toLowerCase() as any : undefined,
+        name: fullNameR || undefined,
+        avatar: avatarR,
+        phone: me.phone,
+        gender: me.gender,
+        dob: me.dob,
+        status: me.status,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+      setUser(u);
+    } catch (err: any) {
+      // Nếu 401 Unauthorized → token không hợp lệ, logout
+      if (err?.status === 401) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+        setUser(null);
+      }
+      // ignore other errors
     }
   };
 
@@ -399,6 +458,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         logout,
         updateProfile,
+        refreshUser,
         isAuthenticated: !!user,
       }}
     >

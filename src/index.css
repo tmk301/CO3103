@@ -107,8 +107,25 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Reset select dropdown styles completely */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  select::-ms-expand {
+    display: none;
   }
 }
 

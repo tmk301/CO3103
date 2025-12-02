@@ -21,9 +21,9 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    const success = await login(username, password);
+    const result = await login(username, password);
 
-    if (success) {
+    if (result.success) {
       toast({
         title: "Đăng nhập thành công!",
         description: "Chào mừng bạn quay trở lại",
@@ -32,7 +32,7 @@ const Login = () => {
     } else {
       toast({
         title: "Đăng nhập thất bại",
-        description: "Email hoặc mật khẩu không chính xác",
+        description: result.error || "Email hoặc mật khẩu không chính xác",
         variant: "destructive",
       });
     }

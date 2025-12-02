@@ -31,8 +31,11 @@ interface JobForm {
   salary_to?: number;
   salary_currency?: string;
   display_salary_currency?: string;
+  salary_currency_symbol?: string;
   work_format?: string;
+  display_work_format?: string;
   job_type?: string;
+  display_job_type?: string;
   description?: string;
   responsibilities?: string;
   requirements?: string;
@@ -115,11 +118,11 @@ const JobDetail = () => {
 
   const getSalary = () => {
     if (!job?.salary_from) return 'Thương lượng';
-    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    const symbol = job.salary_currency_symbol || job.display_salary_currency || job.salary_currency || '₫';
     if (job.salary_to) {
-      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+      return `Từ ${job.salary_from.toLocaleString()} đến ${job.salary_to.toLocaleString()} ${symbol}`;
     }
-    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+    return `Từ ${job.salary_from.toLocaleString()} ${symbol}`;
   };
 
   const formatDate = (date: string) => {
@@ -254,14 +257,14 @@ const JobDetail = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {job.work_format && (
+                    {(job.display_work_format || job.work_format) && (
                       <Badge variant="default">
                         <Briefcase className="h-3 w-3 mr-1" />
-                        {job.work_format}
+                        {job.display_work_format || job.work_format}
                       </Badge>
                     )}
-                    {job.job_type && (
-                      <Badge variant="outline">{job.job_type}</Badge>
+                    {(job.display_job_type || job.job_type) && (
+                      <Badge variant="outline">{job.display_job_type || job.job_type}</Badge>
                     )}
                   </div>
                 </div>

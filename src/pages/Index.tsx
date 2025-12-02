@@ -22,6 +22,7 @@ interface JobForm {
   salary_to?: number;
   salary_currency?: string;
   display_salary_currency?: string;
+  salary_currency_symbol?: string;
   work_format?: string;
   job_type?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -78,11 +79,11 @@ const Index = () => {
 
   const getSalary = (job: JobForm) => {
     if (!job.salary_from) return 'Thương lượng';
-    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    const symbol = job.salary_currency_symbol || job.display_salary_currency || job.salary_currency || '₫';
     if (job.salary_to) {
-      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+      return `Từ ${job.salary_from.toLocaleString()} đến ${job.salary_to.toLocaleString()} ${symbol}`;
     }
-    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+    return `Từ ${job.salary_from.toLocaleString()} ${symbol}`;
   };
 
   const formatDate = (date: string) => {

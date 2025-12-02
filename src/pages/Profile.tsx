@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, API_BASE, getAccessToken } from '@/contexts/AuthContext';
 import { useJobs } from '@/contexts/JobsContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -12,49 +12,180 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, FileText, Briefcase } from 'lucide-react';
+import { User, FileText, Briefcase, Pencil, Save, CalendarIcon, ArrowLeft } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format, parse } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
+interface Gender {
+  code: string;
+  name: string;
+}
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
 
   const [search] = useSearchParams();
   // avoid accessing user.id when user may be null during initial render
   const viewedIdParam = search.get('id');
 
-  // Lấy danh sách user lưu trong localStorage (legacy fallback)
-  const allUsers = JSON.parse(localStorage.getItem('jobfinder_users') || '[]');
+  // State để lưu thông tin user được xem (khi xem người khác)
+  const [viewedUser, setViewedUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(false);
 
-  // Determine which user to display. Prefer explicit ?id= param, else current user
-  const viewedId = viewedIdParam || (user ? user.id : null);
-  const displayUser = (viewedId ? allUsers.find((u: any) => u.id === viewedId) : null) || user || null;
-
-  // Có phải đang xem chính mình không? (false if no current user)
-  const isSelf = Boolean(user && viewedId && user.id === viewedId);
+  // Determine if viewing self
+  const isSelf = Boolean(user && (!viewedIdParam || viewedIdParam === user.id));
+  
+  // Display user: nếu xem chính mình thì dùng user từ context, ngược lại dùng viewedUser từ API
+  const displayUser = isSelf ? user : viewedUser;
 
   const { getUserApplications, jobs } = useJobs();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [cvUrl, setCvUrl] = useState(user?.cvUrl || '');
+  const [isEditing, setIsEditing] = useState(false);
+  const [genders, setGenders] = useState<Gender[]>([]);
+  const [saving, setSaving] = useState(false);
+  
+  // Form fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
+
+  // Fetch user data when viewing someone else's profile
+  useEffect(() => {
+    const fetchViewedUser = async () => {
+      if (!viewedIdParam || isSelf) return;
+      
+      setLoadingUser(true);
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`${API_BASE}/api/users/users/${viewedIdParam}/`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Transform data to match expected format
+          setViewedUser({
+            id: String(data.id),
+            email: data.email,
+            username: data.username,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            role: data.role?.toLowerCase(),
+            phone: data.phone,
+            gender: data.gender,
+            dob: data.dob,
+            status: data.status,
+          });
+        } else {
+          toast({ title: 'Lỗi', description: 'Không thể tải thông tin người dùng', variant: 'destructive' });
+          navigate(-1);
+        }
+      } catch (e) {
+        console.error('Failed to fetch user', e);
+        toast({ title: 'Lỗi', description: 'Không thể tải thông tin người dùng', variant: 'destructive' });
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    fetchViewedUser();
+  }, [viewedIdParam, isSelf]);
+
+  // Refresh user data on mount to get latest status
+  useEffect(() => {
+    if (isSelf && refreshUser) {
+      refreshUser();
+    }
+  }, []);
+
+  // Initialize form when user changes
+  useEffect(() => {
+    if (displayUser) {
+      setFirstName(displayUser.first_name || '');
+      setLastName(displayUser.last_name || '');
+      setPhone(displayUser.phone || '');
+      setDob(displayUser.dob || '');
+      setGender(displayUser.gender || '');
+    }
+  }, [displayUser?.id]);
+
+  // Fetch genders
+  useEffect(() => {
+    const fetchGenders = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/users/genders/`);
+        if (res.ok) {
+          const data = await res.json();
+          setGenders(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch genders', e);
+      }
+    };
+    fetchGenders();
+  }, []);
 
   const userApplications = user ? getUserApplications(user.id) : [];
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
-      await updateProfile({ cvUrl });
-      toast({
-        title: 'Cập nhật thành công',
-        description: 'Link CV đã được lưu.',
+      const token = await getAccessToken();
+      const res = await fetch(`${API_BASE}/api/users/me/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+          dob: dob || null,
+          gender: gender || null,
+        }),
       });
+      
+      if (res.ok) {
+        toast({
+          title: 'Cập nhật thành công',
+          description: 'Thông tin cá nhân đã được lưu.',
+        });
+        setIsEditing(false);
+        // Refresh user data
+        if (refreshUser) {
+          await refreshUser();
+        }
+      } else {
+        throw new Error('Failed to update');
+      }
     } catch (err) {
       toast({
         title: 'Cập nhật thất bại',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    // Reset form to original values
+    if (displayUser) {
+      setFirstName(displayUser.first_name || '');
+      setLastName(displayUser.last_name || '');
+      setPhone(displayUser.phone || '');
+      setDob(displayUser.dob || '');
+      setGender(displayUser.gender || '');
+    }
+    setIsEditing(false);
   };
 
 
@@ -85,21 +216,81 @@ const Profile = () => {
     );
   };
 
+  const getAccountStatusBadge = (status: string) => {
+    const variants: Record<string, string> = {
+      'ACTIVE': 'bg-green-100 text-green-700',
+      'INACTIVE': 'bg-gray-100 text-gray-700',
+      'PENDING_VERIFICATION': 'bg-yellow-100 text-yellow-700',
+      'LOCKED': 'bg-orange-100 text-orange-700',
+      'SUSPENDED': 'bg-red-100 text-red-700',
+      'BANNED': 'bg-red-200 text-red-800',
+    };
+    const labels: Record<string, string> = {
+      'ACTIVE': 'Đang hoạt động',
+      'INACTIVE': 'Không hoạt động',
+      'PENDING_VERIFICATION': 'Chờ xác minh',
+      'LOCKED': 'Đã khoá',
+      'SUSPENDED': 'Tạm ngưng',
+      'BANNED': 'Bị cấm',
+    };
+    return (
+      <Badge className={`${variants[status] || 'bg-gray-100 text-gray-700'} cursor-default pointer-events-none`}>
+        {labels[status] || status}
+      </Badge>
+    );
+  };
+
   useEffect(() => {
     if (!user) navigate('/login');
   }, [user, navigate]);
 
   if (!user) return null; // tránh render khi đang redirect
 
+  // Loading state khi đang fetch user khác
+  if (loadingUser) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <div className="h-16" />
+        <main className="flex-1 py-8">
+          <div className="container mx-auto px-4 text-center">Đang tải...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Nếu xem người khác nhưng không tìm thấy
+  if (viewedIdParam && !isSelf && !displayUser) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <div className="h-16" />
+        <main className="flex-1 py-8">
+          <div className="container mx-auto px-4 text-center">Không tìm thấy người dùng</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   const tabCols = user.role === 'user' ? 'grid-cols-2' : 'grid-cols-1';
 
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
+      <div className="h-16" />
 
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h1 className="text-3xl font-bold mb-8">Hồ sơ cá nhân</h1>
+          <div className="flex items-center gap-4 mb-8">
+            {viewedIdParam && (
+              <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <h1 className="text-3xl font-bold">{viewedIdParam ? 'Thông tin người dùng' : 'Hồ sơ cá nhân'}</h1>
+          </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className={`grid w-full ${tabCols}`}>
@@ -134,21 +325,68 @@ const Profile = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-xl font-semibold">{displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-semibold">{displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email}</h3>
+                        {displayUser?.role === 'admin' && (
+                          <Badge className="bg-purple-100 text-purple-700 cursor-default pointer-events-none">
+                            Quản trị viên
+                          </Badge>
+                        )}
+                        {displayUser?.role === 'employer' && (
+                          <Badge className="bg-blue-100 text-blue-700 cursor-default pointer-events-none">
+                            Nhà tuyển dụng
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-muted-foreground">{displayUser?.email}</p>
                     </div>
                   </div>
 
                   <form onSubmit={handleSave} className="space-y-6">
-                    {/* Họ và tên */}
+                    {/* Trạng thái tài khoản */}
                     <div className="grid gap-2">
-                      <Label>Họ và tên</Label>
-                      <Input
-                        value={displayUser?.name ?? [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() ?? ''}
-                        readOnly
-                        disabled
-                        className="pointer-events-none bg-muted/40"
-                      />
+                      <Label>Trạng thái tài khoản</Label>
+                      <div>
+                        {getAccountStatusBadge(displayUser?.status || '')}
+                      </div>
+                    </div>
+
+                    {/* Họ và tên */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label>Họ</Label>
+                        {isEditing ? (
+                          <Input
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            placeholder="Nhập họ"
+                          />
+                        ) : (
+                          <Input
+                            value={displayUser?.first_name || ''}
+                            readOnly
+                            disabled
+                            className="pointer-events-none bg-muted/40"
+                          />
+                        )}
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Tên</Label>
+                        {isEditing ? (
+                          <Input
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            placeholder="Nhập tên"
+                          />
+                        ) : (
+                          <Input
+                            value={displayUser?.last_name || ''}
+                            readOnly
+                            disabled
+                            className="pointer-events-none bg-muted/40"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     {/* Hàng 1: Ngày sinh + Giới tính */}
@@ -156,23 +394,68 @@ const Profile = () => {
                       {/* Ngày sinh */}
                       <div className="grid gap-2">
                         <Label>Ngày sinh</Label>
-                        <Input
-                          value={displayUser?.dob ? new Date(displayUser.dob).toLocaleDateString('vi-VN') : ''}
-                          readOnly
-                          disabled
-                          className="pointer-events-none bg-muted/40"
-                        />
+                        {isEditing ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !dob && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dob ? format(parse(dob, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'Chọn ngày sinh'}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={dob ? parse(dob, 'yyyy-MM-dd', new Date()) : undefined}
+                                onSelect={(date) => setDob(date ? format(date, 'yyyy-MM-dd') : '')}
+                                locale={vi}
+                                defaultMonth={dob ? parse(dob, 'yyyy-MM-dd', new Date()) : new Date(2000, 0)}
+                                captionLayout="dropdown-buttons"
+                                fromYear={1920}
+                                toYear={new Date().getFullYear()}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <Input
+                            value={displayUser?.dob ? format(new Date(displayUser.dob), 'dd/MM/yyyy') : ''}
+                            readOnly
+                            disabled
+                            className="pointer-events-none bg-muted/40"
+                          />
+                        )}
                       </div>
 
                       {/* Giới tính */}
                       <div className="grid gap-2">
                         <Label>Giới tính</Label>
-                        <Input
-                          value={displayUser?.gender === 'MALE' ? 'Nam' : displayUser?.gender === 'FEMALE' ? 'Nữ' : ''}
-                          readOnly
-                          disabled
-                          className="pointer-events-none bg-muted/40"
-                        />
+                        {isEditing ? (
+                          <Select value={gender} onValueChange={setGender}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn giới tính" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {genders.map(g => (
+                                <SelectItem key={g.code} value={g.code}>
+                                  {g.name === 'Male' ? 'Nam' : g.name === 'Female' ? 'Nữ' : g.name === 'Other' ? 'Khác' : g.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={displayUser?.gender === 'MALE' ? 'Nam' : displayUser?.gender === 'FEMALE' ? 'Nữ' : displayUser?.gender === 'OTHER' ? 'Khác' : ''}
+                            readOnly
+                            disabled
+                            className="pointer-events-none bg-muted/40"
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -181,15 +464,23 @@ const Profile = () => {
                       {/* Số điện thoại */}
                       <div className="grid gap-2">
                         <Label>Số điện thoại</Label>
-                        <Input
-                          value={displayUser?.phone ?? ''}
-                          readOnly
-                          disabled
-                          className="pointer-events-none bg-muted/40"
-                        />
+                        {isEditing ? (
+                          <Input
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="Nhập số điện thoại"
+                          />
+                        ) : (
+                          <Input
+                            value={displayUser?.phone ?? ''}
+                            readOnly
+                            disabled
+                            className="pointer-events-none bg-muted/40"
+                          />
+                        )}
                       </div>
 
-                      {/* Email */}
+                      {/* Email - không cho sửa */}
                       <div className="grid gap-2">
                         <Label>Email</Label>
                         <Input
@@ -201,40 +492,24 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    {/* Link CV */}
-                    {isSelf ? (
-                      /* ---- CHỈ CHỦ TÀI KHOẢN MỚI THẤY FORM SỬA ---- */
-                      <div className="grid gap-2">
-                        <Label>Link CV</Label>
-                        <Input
-                          placeholder="https://..."
-                          value={cvUrl}
-                          onChange={(e) => setCvUrl(e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Dán link Google Drive/Docs, PDF online, hoặc trang CV cá nhân.
-                        </p>
-
-                        <div className="flex justify-end">
-                          <Button type="submit">Lưu link CV</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* ---- NGƯỜI KHÁC XEM THÌ CHỈ HIỂN THỊ ---- */
-                      <div className="grid gap-2">
-                        <Label>Link CV</Label>
-
-                        {displayUser.cvUrl ? (
-                          <a
-                            href={displayUser.cvUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline break-all"
-                          >
-                            {displayUser.cvUrl}
-                          </a>
+                    {/* Nút chỉnh sửa / lưu */}
+                    {isSelf && (
+                      <div className="flex justify-end gap-2">
+                        {isEditing ? (
+                          <>
+                            <Button type="button" variant="outline" onClick={handleCancel}>
+                              Huỷ
+                            </Button>
+                            <Button type="submit" disabled={saving}>
+                              <Save className="h-4 w-4 mr-2" />
+                              {saving ? 'Đang lưu...' : 'Lưu thông tin'}
+                            </Button>
+                          </>
                         ) : (
-                          <span className="text-muted-foreground">Chưa cập nhật CV</span>
+                          <Button type="button" onClick={() => setIsEditing(true)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Chỉnh sửa thông tin
+                          </Button>
                         )}
                       </div>
                     )}

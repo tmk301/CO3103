@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, authFetch, API_BASE } from '@/contexts/AuthContext';
 import { useJobs } from '@/contexts/JobsContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ interface JobForm {
   salary_to?: number;
   salary_currency?: string;
   display_salary_currency?: string;
+  salary_currency_symbol?: string;
   work_format?: string;
   job_type?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -41,6 +42,14 @@ const EmployerDashboard = () => {
   } = useJobs();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Lấy tab từ URL, mặc định là 'jobs'
+  const currentTab = searchParams.get('tab') || 'jobs';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   const [jobs, setJobs] = useState<JobForm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,11 +107,11 @@ const EmployerDashboard = () => {
   // Build salary string  
   const getSalary = (job: JobForm) => {
     if (!job.salary_from) return 'Thương lượng';
-    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    const symbol = job.salary_currency_symbol || job.display_salary_currency || job.salary_currency || '₫';
     if (job.salary_to) {
-      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+      return `Từ ${job.salary_from.toLocaleString()} đến ${job.salary_to.toLocaleString()} ${symbol}`;
     }
-    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+    return `Từ ${job.salary_from.toLocaleString()} ${symbol}`;
   };
 
   // Gộp ứng viên cho các job của employer
@@ -261,7 +270,7 @@ const EmployerDashboard = () => {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="jobs" className="space-y-6">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList>
               <TabsTrigger value="jobs">Tin đã đăng</TabsTrigger>
               <TabsTrigger value="pendingJobs">Chờ duyệt</TabsTrigger>
