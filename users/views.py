@@ -127,6 +127,24 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['date_joined', 'username']
     ordering = ['-date_joined']
 
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve to check status for non-admin users."""
+        instance = self.get_object()
+        
+        # Admin can always view
+        is_admin = request.user.is_staff or (hasattr(request.user, 'role') and request.user.role and request.user.role.code.upper() == 'ADMIN')
+        
+        if not is_admin:
+            user_status = getattr(instance, 'status', None)
+            status_code = user_status.code.upper() if user_status else None
+            
+            # Check profile visibility based on status
+            if status_code in ['INACTIVE', 'LOCKED', 'BANNED']:
+                return Response({'detail': 'Không thể xem trang cá nhân của người dùng này.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'], url_path='set-status')
     def set_status(self, request, pk=None):
         """Admin action to change a user's status."""
@@ -189,6 +207,28 @@ class ProfileViewSet(viewsets.ModelViewSet):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
+        
+        # Check user status and restrict login accordingly
+        user_status = getattr(self.user, 'status', None)
+        status_code = user_status.code.upper() if user_status else None
+        
+        # BANNED: admin-side, khoá vĩnh viễn - không thể đăng nhập
+        if status_code == 'BANNED':
+            from rest_framework import serializers
+            raise serializers.ValidationError({
+                'detail': 'Tài khoản của bạn đã bị khoá vĩnh viễn. Vui lòng liên hệ hỗ trợ.'
+            })
+        
+        # SUSPENDED: admin-side, tạm ngưng (nhập sai mật khẩu quá nhiều lần) - không thể đăng nhập
+        if status_code == 'SUSPENDED':
+            from rest_framework import serializers
+            raise serializers.ValidationError({
+                'detail': 'Tài khoản của bạn đang bị tạm ngưng do nhập sai mật khẩu quá nhiều lần. Vui lòng liên hệ hỗ trợ.'
+            })
+        
+        # INACTIVE: user-side, ngưng hoạt động - cho phép đăng nhập
+        # LOCKED: user-side, khoá (ẩn khỏi nền tảng) - cho phép đăng nhập
+        
         try:
             update_last_login(None, self.user)
         except Exception:

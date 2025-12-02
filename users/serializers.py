@@ -38,11 +38,25 @@ class ProfileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SlugRelatedField(slug_field='code', queryset=Role.objects.all(), allow_null=True, required=False)
     status = serializers.SlugRelatedField(slug_field='code', queryset=Status.objects.all(), allow_null=True, required=False)
+    dob = serializers.SerializerMethodField()
+    gender = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'phone', 'first_name', 'last_name', 'role', 'status', 'is_active', 'is_staff', 'date_joined']
+        fields = ['id', 'username', 'email', 'phone', 'first_name', 'last_name', 'role', 'status', 'is_active', 'is_staff', 'date_joined', 'dob', 'gender']
         read_only_fields = ['username', 'is_active', 'is_staff', 'date_joined']
+
+    def get_dob(self, obj):
+        try:
+            return obj.profile.dob
+        except Profile.DoesNotExist:
+            return None
+
+    def get_gender(self, obj):
+        try:
+            return obj.profile.gender.code if obj.profile.gender else None
+        except Profile.DoesNotExist:
+            return None
 
 class UserCreateSerializer(serializers.Serializer):
     """Create a CustomUser (used by registration)."""
@@ -111,7 +125,9 @@ class UserSelfUpdateSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150, required=False)
     last_name = serializers.CharField(max_length=150, required=False)
     email = serializers.EmailField(required=False)
-    phone = serializers.CharField(max_length=15, required=False)
+    phone = serializers.CharField(max_length=15, required=False, allow_blank=True)
+    dob = serializers.DateField(required=False, allow_null=True)
+    gender = serializers.SlugRelatedField(slug_field='code', queryset=Gender.objects.all(), required=False, allow_null=True)
 
     def validate_email(self, value: str):
         user = self.context['request'].user
@@ -121,10 +137,29 @@ class UserSelfUpdateSerializer(serializers.Serializer):
         return value
 
     def update(self, instance, validated_data):
-        for fld in ('first_name', 'last_name', 'email', 'phone'):
+        # Update User fields
+        user_fields = ['first_name', 'last_name', 'email', 'phone']
+        user_update_fields = []
+        for fld in user_fields:
             if fld in validated_data:
                 setattr(instance, fld, validated_data.get(fld))
-        instance.save(update_fields=[fld for fld in ('first_name', 'last_name', 'email', 'phone') if fld in validated_data])
+                user_update_fields.append(fld)
+        if user_update_fields:
+            instance.save(update_fields=user_update_fields)
+        
+        # Update Profile fields (dob, gender)
+        profile_data = {}
+        if 'dob' in validated_data:
+            profile_data['dob'] = validated_data.get('dob')
+        if 'gender' in validated_data:
+            profile_data['gender'] = validated_data.get('gender')
+        
+        if profile_data:
+            profile, _ = Profile.objects.get_or_create(user=instance)
+            for fld, val in profile_data.items():
+                setattr(profile, fld, val)
+            profile.save(update_fields=list(profile_data.keys()))
+        
         return instance
     
 class PasswordChangeSerializer(serializers.Serializer):

@@ -146,8 +146,31 @@ class ProvinceViewSet(LookupViewSetMixin, viewsets.ReadOnlyModelViewSet):
 
 class DistrictViewSet(LookupViewSetMixin, viewsets.ReadOnlyModelViewSet):
     """Quận/Huyện/Thị xã/Thành phố thuộc tỉnh"""
-    queryset = District.objects.filter(is_active=True).select_related('province', 'administrative_unit').order_by('code')
     serializer_class = DistrictSerializer
+
+    def get_queryset(self):
+        queryset = District.objects.filter(is_active=True).select_related('province', 'administrative_unit')
+        
+        # Filter by province if provided
+        province_id = self.request.query_params.get('province')
+        if province_id:
+            queryset = queryset.filter(province_id=province_id)
+        
+        # Sort: numeric names first (by numeric value), then alphabetic names
+        queryset = queryset.annotate(
+            is_numeric=Case(
+                When(name__regex=r'^\d+$', then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField()
+            ),
+            numeric_value=Case(
+                When(name__regex=r'^\d+$', then=Cast('name', IntegerField())),
+                default=Value(999999),
+                output_field=IntegerField()
+            )
+        ).order_by('is_numeric', 'numeric_value', 'name')
+        
+        return queryset
 
     @action(detail=True, methods=['get'])
     def wards(self, request, pk=None):
@@ -175,8 +198,31 @@ class DistrictViewSet(LookupViewSetMixin, viewsets.ReadOnlyModelViewSet):
 
 class WardViewSet(LookupViewSetMixin, viewsets.ReadOnlyModelViewSet):
     """Phường/Xã/Thị trấn"""
-    queryset = Ward.objects.filter(is_active=True).select_related('district', 'administrative_unit').order_by('code')
     serializer_class = WardSerializer
+
+    def get_queryset(self):
+        queryset = Ward.objects.filter(is_active=True).select_related('district', 'administrative_unit')
+        
+        # Filter by district if provided
+        district_id = self.request.query_params.get('district')
+        if district_id:
+            queryset = queryset.filter(district_id=district_id)
+        
+        # Sort: numeric names first (by numeric value), then alphabetic names
+        queryset = queryset.annotate(
+            is_numeric=Case(
+                When(name__regex=r'^\d+$', then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField()
+            ),
+            numeric_value=Case(
+                When(name__regex=r'^\d+$', then=Cast('name', IntegerField())),
+                default=Value(999999),
+                output_field=IntegerField()
+            )
+        ).order_by('is_numeric', 'numeric_value', 'name')
+        
+        return queryset
 
 
 class FormViewSet(viewsets.ModelViewSet):
@@ -203,6 +249,18 @@ class FormViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         
+        # Define status codes where jobs should be hidden
+        # LOCKED and BANNED: hide all jobs
+        # INACTIVE: jobs still visible
+        # SUSPENDED: jobs still visible
+        hidden_owner_statuses = ['LOCKED', 'BANNED']
+        
+        # Base filter: exclude jobs from users with hidden statuses (for non-admin)
+        def exclude_hidden_owners(queryset):
+            return queryset.exclude(
+                created_by__status__code__in=hidden_owner_statuses
+            )
+        
         # Staff or admin role can see all statuses but only active jobs
         if user.is_authenticated:
             is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
@@ -211,12 +269,16 @@ class FormViewSet(viewsets.ModelViewSet):
 
         # Authenticated users see: approved & active jobs + their own active jobs (any status)
         if user.is_authenticated:
-            return qs.filter(
+            base_qs = qs.filter(
                 Q(status='approved', is_active=True) | Q(created_by=user, is_active=True)
             )
+            # Exclude jobs from hidden owners (except user's own jobs)
+            return base_qs.exclude(
+                ~Q(created_by=user) & Q(created_by__status__code__in=hidden_owner_statuses)
+            )
 
-        # Anonymous: only approved & active jobs
-        return qs.filter(status='approved', is_active=True)
+        # Anonymous: only approved & active jobs, excluding hidden owners
+        return exclude_hidden_owners(qs.filter(status='approved', is_active=True))
 
     def perform_create(self, serializer):
         # set created_by if available

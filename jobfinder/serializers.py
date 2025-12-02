@@ -89,6 +89,13 @@ class FormSerializer(serializers.ModelSerializer):
     district_name = serializers.CharField(source='district.name', read_only=True)
     ward_name = serializers.CharField(source='ward.name', read_only=True)
 
+    # Read-only display fields (handles 'other' case automatically)
+    display_verified_company = serializers.CharField(read_only=True)
+    display_work_format = serializers.CharField(read_only=True)
+    display_job_type = serializers.CharField(read_only=True)
+    display_salary_currency = serializers.CharField(read_only=True)
+    salary_currency_symbol = serializers.CharField(source='salary_currency.symbol', read_only=True)
+
     # Allow other-text fields
     work_format_other = serializers.CharField(allow_blank=True, required=False)
     job_type_other = serializers.CharField(allow_blank=True, required=False)
@@ -101,6 +108,7 @@ class FormSerializer(serializers.ModelSerializer):
             'id',
             'verified_company',
             'verified_company_other',
+            'display_verified_company',
             'created_by',
             'title',
             'contact_email',
@@ -108,12 +116,16 @@ class FormSerializer(serializers.ModelSerializer):
             'application_url',
             'work_format',
             'work_format_other',
+            'display_work_format',
             'job_type',
             'job_type_other',
+            'display_job_type',
             'salary_from',
             'salary_to',
             'salary_currency',
             'salary_currency_other',
+            'display_salary_currency',
+            'salary_currency_symbol',
             'province',
             'province_name',
             'district',
