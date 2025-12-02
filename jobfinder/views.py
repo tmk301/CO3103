@@ -37,6 +37,10 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user and request.user.is_staff:
             return True
+        # Also check role
+        if request.user and hasattr(request.user, 'role') and request.user.role:
+            if request.user.role.code.upper() == 'ADMIN':
+                return True
         return getattr(obj, 'created_by', None) == request.user
 
 
@@ -199,14 +203,16 @@ class FormViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         
-        # Staff can see all
-        if user.is_authenticated and user.is_staff:
-            return qs
+        # Staff or admin role can see all statuses but only active jobs
+        if user.is_authenticated:
+            is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+            if is_admin:
+                return qs.filter(is_active=True)
 
-        # Authenticated users see: approved jobs + their own jobs (any status)
+        # Authenticated users see: approved & active jobs + their own active jobs (any status)
         if user.is_authenticated:
             return qs.filter(
-                Q(status='approved', is_active=True) | Q(created_by=user)
+                Q(status='approved', is_active=True) | Q(created_by=user, is_active=True)
             )
 
         # Anonymous: only approved & active jobs
@@ -243,6 +249,66 @@ class FormViewSet(viewsets.ModelViewSet):
         maybe_create('workformat', validated_data.get('work_format'), validated_data.get('work_format_other'))
         maybe_create('jobtype', validated_data.get('job_type'), validated_data.get('job_type_other'))
         maybe_create('currency', validated_data.get('salary_currency'), validated_data.get('salary_currency_other'))
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def approve(self, request, pk=None):
+        """Admin action to approve a job posting."""
+        user = request.user
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        if not is_admin:
+            return Response({'detail': 'Only admins can approve jobs.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        form = self.get_object()
+        form.status = 'approved'
+        form.save()
+        return Response({'detail': 'Job approved successfully.', 'status': form.status})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reject(self, request, pk=None):
+        """Admin action to reject a job posting."""
+        user = request.user
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        if not is_admin:
+            return Response({'detail': 'Only admins can reject jobs.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        form = self.get_object()
+        form.status = 'rejected'
+        form.save()
+        return Response({'detail': 'Job rejected successfully.', 'status': form.status})
+
+    def perform_destroy(self, instance):
+        """Soft delete: set is_active = False instead of deleting."""
+        instance.is_active = False
+        instance.save()
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def hidden(self, request):
+        """Admin action to list hidden (soft-deleted) jobs."""
+        user = request.user
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        if not is_admin:
+            return Response({'detail': 'Only admins can view hidden jobs.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        qs = Form.objects.filter(is_active=False)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def restore(self, request, pk=None):
+        """Admin action to restore a hidden job."""
+        user = request.user
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        if not is_admin:
+            return Response({'detail': 'Only admins can restore jobs.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            form = Form.objects.get(pk=pk)
+        except Form.DoesNotExist:
+            return Response({'detail': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        form.is_active = True
+        form.save()
+        return Response({'detail': 'Job restored successfully.'})
 
 
 class PendingLookupViewSet(viewsets.ReadOnlyModelViewSet):

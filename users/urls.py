@@ -12,6 +12,7 @@ from .views import (
     ChangePasswordView,
     ProfileViewSet,
     CustomTokenObtainPairView,
+    UserViewSet,
 )
 
 router = DefaultRouter()
@@ -19,6 +20,7 @@ router.register(r'roles', RoleViewSet, basename='role')
 router.register(r'genders', GenderViewSet, basename='gender')
 router.register(r'statuses', StatusViewSet, basename='status')
 router.register(r'profiles', ProfileViewSet, basename='profile')
+router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),

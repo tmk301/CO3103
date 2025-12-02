@@ -102,6 +102,48 @@ class ChangePasswordView(APIView):
         serializer.save()
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
+
+class IsAdminRole(permissions.BasePermission):
+    """Allow access only to admin users (by role or is_staff)."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_staff:
+            return True
+        if hasattr(request.user, 'role') and request.user.role:
+            return request.user.role.code.upper() == 'ADMIN'
+        return False
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """Admin-only viewset to list all users."""
+    queryset = CustomUser.objects.select_related('role', 'status').all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminRole]
+    authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['role__code', 'status__code', 'is_active']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering_fields = ['date_joined', 'username']
+    ordering = ['-date_joined']
+
+    @action(detail=True, methods=['post'], url_path='set-status')
+    def set_status(self, request, pk=None):
+        """Admin action to change a user's status."""
+        from .models import Status
+        user_obj = self.get_object()
+        status_code = request.data.get('status')
+        if not status_code:
+            return Response({'detail': 'Status code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            new_status = Status.objects.get(code=status_code)
+        except Status.DoesNotExist:
+            return Response({'detail': 'Invalid status code.'}, status=status.HTTP_400_BAD_REQUEST)
+        user_obj.status = new_status
+        user_obj.save()
+        return Response({'detail': f'User status updated to {new_status.name}.', 'status': new_status.code})
+
+
 # Profile ViewSet
 
 class ProfileViewSet(viewsets.ModelViewSet):
