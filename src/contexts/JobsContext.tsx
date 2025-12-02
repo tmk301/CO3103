@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+<<<<<<< HEAD
 import * as JobAPI from '../lib/jobfinder';
+=======
+>>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
 
 export type JobType = 'full-time' | 'part-time' | 'hybrid' | 'remote';
 export type JobStatus = 'pending' | 'approved' | 'rejected';
@@ -149,6 +152,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     const savedApps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || '[]');
     setJobs(savedJobs);
     setApplications(savedApps);
+<<<<<<< HEAD
 
     // If backend is configured, fetch jobs from API and replace demo/local data
     (async () => {
@@ -161,6 +165,8 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         // ignore and keep local/demo data
       }
     })();
+=======
+>>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
   }, []);
 
   const saveJobs = (newJobs: Job[]) => {
@@ -174,6 +180,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addJob = (job: Omit<Job, 'id' | 'postedDate' | 'status'>) => {
+<<<<<<< HEAD
     (async () => {
       try {
         const payload = {
@@ -228,6 +235,29 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         saveApplications(nextApps);
       }
     })();
+=======
+    const newJob: Job = {
+      ...job,
+      id: Date.now().toString(),
+      postedDate: new Date().toISOString(),
+      status: 'pending',
+    };
+    saveJobs([...jobs, newJob]);
+  };
+
+  const updateJob = (id: string, updates: Partial<Job>) => {
+    const updatedJobs = jobs.map(job =>
+      job.id === id ? { ...job, ...updates } : job
+    );
+    saveJobs(updatedJobs);
+  };
+
+  const deleteJob = (id: string) => {
+    const nextJobs = jobs.filter(job => job.id !== id);
+    const nextApps = applications.filter(app => app.jobId !== id);
+    saveJobs(nextJobs);
+    saveApplications(nextApps);
+>>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
   };
 
   const deleteJobsByStatus = (statuses: JobStatus[]) => {
@@ -245,6 +275,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const applyToJob = (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => {
+<<<<<<< HEAD
     (async () => {
       try {
         await JobAPI.applyToJob(jobId, application);
@@ -265,6 +296,15 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         saveApplications([...applications, newApplication]);
       }
     })();
+=======
+    const newApplication: Application = {
+      ...application,
+      id: Date.now().toString(),
+      appliedDate: new Date().toISOString(),
+      status: 'pending',
+    };
+    saveApplications([...applications, newApplication]);
+>>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
   };
 
   const updateApplicationStatus = (appId: string, status: Application['status']) => {
