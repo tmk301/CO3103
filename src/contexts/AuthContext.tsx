@@ -62,7 +62,6 @@ async function getJSON(url: string, token?: string) {
   return data;
 }
 
-<<<<<<< HEAD
 // Try to refresh the access token using the refresh token
 async function tryRefreshToken(): Promise<string | null> {
   try {
@@ -150,8 +149,6 @@ export async function getAccessToken(onLogout?: () => void): Promise<string | nu
 // Export authFetch for use in components that need authenticated requests
 export { authFetch };
 
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Initialize user synchronously from localStorage so page refresh preserves session
   const [user, setUser] = useState<User | null>(() => {
@@ -195,10 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: me.username,
         first_name: me.first_name,
         last_name: me.last_name,
-<<<<<<< HEAD
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
         name: fullName || undefined,
         avatar,
         phone: me.phone,
@@ -274,10 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: me.username,
         first_name: me.first_name,
         last_name: me.last_name,
-<<<<<<< HEAD
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
         name: fullNameR || undefined,
         avatar: avatarR,
         phone: me.phone,
@@ -299,19 +290,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(TOKEN_KEY);
   };
 
-<<<<<<< HEAD
   // Set global logout handler for lib/jobfinder.ts on mount
   useEffect(() => {
     setGlobalLogout(logout);
   }, []);
 
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
   const updateProfile = async (data: Partial<User>): Promise<boolean> => {
     try {
       const tok = localStorage.getItem(TOKEN_KEY);
       if (!tok) throw new Error('Not authenticated');
-<<<<<<< HEAD
 
       // Helper to make authenticated requests with auto-refresh
       const authRequest = async (url: string, options: RequestInit) => {
@@ -322,9 +309,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return res.json().catch(() => ({}));
       };
-=======
-      const { access } = JSON.parse(tok);
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
 
       // update user basic fields via /api/users/me/
       const body: any = {};
@@ -334,18 +318,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data.phone !== undefined) body.phone = data.phone;
 
       if (Object.keys(body).length > 0) {
-<<<<<<< HEAD
         await authRequest(`${API_BASE}/api/users/me/`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-=======
-        await fetch(`${API_BASE}/api/users/me/`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access}`,
-          },
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
           body: JSON.stringify(body),
         });
       }
@@ -358,23 +333,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         profileBody.gender = data.gender as any;
       }
       if (Object.keys(profileBody).length > 0) {
-<<<<<<< HEAD
         await authRequest(`${API_BASE}/api/users/profiles/me/`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-=======
-        await fetch(`${API_BASE}/api/users/profiles/me/`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access}`,
-          },
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
           body: JSON.stringify(profileBody),
         });
       }
 
-<<<<<<< HEAD
       // refresh local user and merge profile - get fresh token from storage (may have been refreshed)
       const freshTok = localStorage.getItem(TOKEN_KEY);
       const freshAccess = freshTok ? JSON.parse(freshTok).access : null;
@@ -382,12 +347,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const me = await getJSON(`${API_BASE}/api/users/me/`, freshAccess);
       try {
         const profile = await getJSON(`${API_BASE}/api/users/profiles/me/`, freshAccess);
-=======
-      // refresh local user and merge profile
-      const me = await getJSON(`${API_BASE}/api/users/me/`, access);
-      try {
-        const profile = await getJSON(`${API_BASE}/api/users/profiles/me/`, access);
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
         if (profile) {
           me.dob = profile.dob ?? me.dob;
           me.gender = profile.gender ?? me.gender;
@@ -403,10 +362,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: me.username,
         first_name: me.first_name,
         last_name: me.last_name,
-<<<<<<< HEAD
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
         name: fullNameU || undefined,
         avatar: avatarU,
         phone: me.phone,

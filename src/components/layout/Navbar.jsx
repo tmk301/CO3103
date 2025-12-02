@@ -1,11 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-<<<<<<< HEAD
 import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText } from 'lucide-react';
-=======
-import { Briefcase, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
 
 import {
   DropdownMenu,
@@ -74,7 +70,6 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   )}
 
-<<<<<<< HEAD
                   {/* show Quản lý tin đăng for employers */}
                   {location.pathname !== '/employer/dashboard' && (
                     <DropdownMenuItem onClick={() => navigate('/employer/dashboard')}>
@@ -83,8 +78,6 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   )}
 
-=======
->>>>>>> 65b9fe935a91280afe4c77ab691f2230b474279c
                   {/* show Profile only if not on /profile */}
                   {location.pathname !== '/profile' && (
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
