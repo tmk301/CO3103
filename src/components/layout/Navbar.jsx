@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText } from 'lucide-react';
+import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText, Users } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -26,9 +26,15 @@ const Navbar = () => {
     if (!user) return '/';
     // Normalize role: backend may return codes like 'USER' or 'ADMIN'
     const role = (user.role || '').toString().toLowerCase();
-    if (role.includes('admin')) return '/admin/dashboard';
+    if (role === 'admin') return '/admin/dashboard';
     // Default: navigate to homepage (product expects Dashboard => home)
     return '/';
+  };
+
+  const isAdmin = () => {
+    if (!user) return false;
+    const role = (user.role || '').toString().toLowerCase();
+    return role === 'admin';
   };
 
   return (
@@ -62,16 +68,24 @@ const Navbar = () => {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  {/* show Dashboard only if we're not already on the computed dashboard route */}
-                  {location.pathname !== getDashboardLink() && (
-                    <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
+                  {/* show Admin Dashboard for admin users */}
+                  {isAdmin() && location.pathname !== '/admin/dashboard' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard
+                      Admin Dashboard
                     </DropdownMenuItem>
                   )}
 
-                  {/* show Quản lý tin đăng for employers */}
-                  {location.pathname !== '/employer/dashboard' && (
+                  {/* show Quản lý tài khoản for admin users */}
+                  {isAdmin() && location.pathname !== '/admin/users' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin/users')}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Quản lý tài khoản
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* show Quản lý tin đăng for non-admin users */}
+                  {!isAdmin() && location.pathname !== '/employer/dashboard' && (
                     <DropdownMenuItem onClick={() => navigate('/employer/dashboard')}>
                       <FileText className="mr-2 h-4 w-4" />
                       Quản lý tin đăng

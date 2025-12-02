@@ -63,12 +63,23 @@ const JobDetail = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const token = await getAccessToken();
-        const headers: HeadersInit = {};
+        let token = await getAccessToken();
+        let headers: HeadersInit = {};
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
-        const res = await fetch(`${API_BASE}/api/jobfinder/forms/${id}/`, { headers });
+        
+        let res = await fetch(`${API_BASE}/api/jobfinder/forms/${id}/`, { headers });
+        
+        // If 401, try to get fresh token and retry
+        if (res.status === 401 && token) {
+          token = await getAccessToken();
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            res = await fetch(`${API_BASE}/api/jobfinder/forms/${id}/`, { headers });
+          }
+        }
+        
         if (res.ok) {
           const data = await res.json();
           setJob(data);

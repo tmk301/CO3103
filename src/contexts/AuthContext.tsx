@@ -134,16 +134,30 @@ export function getGlobalLogout(): (() => void) | null {
 }
 
 // Get current access token (refreshing if needed)
-export async function getAccessToken(onLogout?: () => void): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
   const tok = localStorage.getItem(TOKEN_KEY);
   if (!tok) return null;
   
-  const { access } = JSON.parse(tok);
+  const { access, refresh } = JSON.parse(tok);
   if (!access) return null;
 
-  // Try a simple validation by checking if token works
-  // For now, just return the access token - authFetch handles refresh
-  return access;
+  // Check if token is expired by decoding JWT
+  try {
+    const payload = JSON.parse(atob(access.split('.')[1]));
+    const exp = payload.exp * 1000; // Convert to milliseconds
+    const now = Date.now();
+    
+    // If token expires in less than 30 seconds, refresh it
+    if (exp - now < 30000) {
+      const newAccess = await tryRefreshToken();
+      return newAccess;
+    }
+    
+    return access;
+  } catch {
+    // If we can't decode the token, try to use it anyway
+    return access;
+  }
 }
 
 // Export authFetch for use in components that need authenticated requests
