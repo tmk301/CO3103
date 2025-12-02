@@ -1,28 +1,103 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useJobs } from '@/contexts/JobsContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import JobCard from '@/components/JobCard';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Search, MapPin, Briefcase, Users, Building2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Search, MapPin, Briefcase, Users, Building2, DollarSign, Clock } from 'lucide-react';
+import { useAuth, API_BASE } from '@/contexts/AuthContext';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+interface JobForm {
+  id: number;
+  title: string;
+  verified_company?: string;
+  display_verified_company?: string;
+  verified_company_other?: string;
+  province_name?: string;
+  district_name?: string;
+  ward_name?: string;
+  salary_from?: number;
+  salary_to?: number;
+  salary_currency?: string;
+  display_salary_currency?: string;
+  work_format?: string;
+  job_type?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  is_active: boolean;
+  created_at: string;
+}
 
 const Index = () => {
-  const { jobs } = useJobs();
   const navigate = useNavigate();
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchLocation, setSearchLocation] = useState('');
   const { user } = useAuth();
+  const [jobs, setJobs] = useState<JobForm[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const approvedJobs = jobs.filter(job => job.status === 'approved').slice(0, 6);
+  // Fetch approved jobs from API
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/jobfinder/forms/`);
+        if (res.ok) {
+          const data = await res.json();
+          // Only show approved jobs, limit to 6
+          const approvedJobs = data
+            .filter((j: JobForm) => j.status === 'approved')
+            .slice(0, 6);
+          setJobs(approvedJobs);
+        }
+      } catch (e) {
+        console.error('Failed to fetch jobs', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
 
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (searchKeyword) params.set('keyword', searchKeyword);
-    if (searchLocation) params.set('location', searchLocation);
-    navigate(`/jobs?${params.toString()}`);
+  // Helper functions
+  const getCompanyName = (job: JobForm) => {
+    if (job.display_verified_company) return job.display_verified_company;
+    if (job.verified_company_other) return job.verified_company_other;
+    return job.verified_company || 'Chưa có công ty';
+  };
+
+  const getLocation = (job: JobForm) => {
+    const parts = [job.ward_name, job.district_name, job.province_name].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Chưa có địa chỉ';
+  };
+
+  const getSalary = (job: JobForm) => {
+    if (!job.salary_from) return 'Thương lượng';
+    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    if (job.salary_to) {
+      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+    }
+    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+  };
+
+  const formatDate = (date: string) => {
+    const now = new Date();
+    const posted = new Date(date);
+    const diffTime = Math.abs(now.getTime() - posted.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} tuần trước`;
+    return posted.toLocaleDateString('vi-VN');
+  };
+
+  const getWorkFormatColor = (format?: string) => {
+    const colors: Record<string, string> = {
+      'onsite': 'bg-primary/10 text-primary',
+      'remote': 'bg-success/10 text-success',
+      'hybrid': 'bg-accent/10 text-accent',
+    };
+    return colors[format?.toLowerCase() || ''] || 'bg-muted text-muted-foreground';
   };
 
   return (
@@ -42,33 +117,18 @@ const Index = () => {
                 Hàng ngàn cơ hội việc làm đang chờ đón bạn!
               </p>
 
-              {/* Search Box */}
+              {/* Search Box - Click to navigate to search page */}
               <div className="mx-auto max-w-2xl">
-                <div className="flex flex-col md:flex-row gap-3 bg-white rounded-lg p-3 shadow-xl">
-                  <div className="flex-1 flex items-center gap-2 px-3 border-r border-border/50">
-                    <Search className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                      placeholder="Vị trí, công ty..."
-                      value={searchKeyword}
-                      onChange={(e) => setSearchKeyword(e.target.value)}
-                      className="border-0 focus-visible:ring-0 text-slate-900 placeholder:text-slate-500 caret-slate-900"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                  </div>
-                  <div className="flex-1 flex items-center gap-2 px-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                      placeholder="Địa điểm"
-                      value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
-                      className="border-0 focus-visible:ring-0 text-slate-900 placeholder:text-slate-500 caret-slate-900"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                  </div>
-                  <Button size="lg" onClick={handleSearch} className="md:w-auto">
+                <button
+                  onClick={() => navigate('/jobs')}
+                  className="w-full flex items-center gap-3 bg-white rounded-lg p-4 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer text-left"
+                >
+                  <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <span className="flex-1 text-slate-400">Tìm kiếm vị trí, công ty, địa điểm...</span>
+                  <div className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium">
                     Tìm kiếm
-                  </Button>
-                </div>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -126,11 +186,70 @@ const Index = () => {
               <p className="text-muted-foreground">Khám phá các cơ hội việc làm hấp dẫn</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-              {approvedJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center text-muted-foreground py-8">Đang tải...</div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">Chưa có tin tuyển dụng nào</div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                {jobs.map((job) => (
+                  <Card key={job.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-border/50">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12 border">
+                          <AvatarFallback>{getCompanyName(job).charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                              {job.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">{getCompanyName(job)}</p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              <span>{getLocation(job)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-4 w-4" />
+                              <span>{getSalary(job)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{formatDate(job.created_at)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {job.work_format && (
+                              <Badge className={getWorkFormatColor(job.work_format)}>
+                                <Briefcase className="h-3 w-3 mr-1" />
+                                {job.work_format}
+                              </Badge>
+                            )}
+                            {job.job_type && (
+                              <Badge variant="outline">{job.job_type}</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter className="p-6 pt-0">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => navigate(`/jobs/${job.id}`)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             <div className="text-center">
               <Button size="lg" onClick={() => navigate('/jobs')}>

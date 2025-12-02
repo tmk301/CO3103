@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useJobs } from '@/contexts/JobsContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, API_BASE, getAccessToken } from '@/contexts/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -12,29 +12,138 @@ import {
   MapPin, DollarSign, Briefcase, Clock, Building2,
   CheckCircle2, ArrowLeft
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
+interface JobForm {
+  id: number;
+  title: string;
+  verified_company?: string;
+  display_verified_company?: string;
+  verified_company_other?: string;
+  province_name?: string;
+  district_name?: string;
+  ward_name?: string;
+  address?: string;
+  salary_from?: number;
+  salary_to?: number;
+  salary_currency?: string;
+  display_salary_currency?: string;
+  work_format?: string;
+  job_type?: string;
+  description?: string;
+  responsibilities?: string;
+  requirements?: string;
+  required_experience?: string;
+  benefits?: string;
+  contact_email?: string;
+  application_email?: string;
+  application_url?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  is_active: boolean;
+  created_at: string;
+  created_by?: string;
+}
+
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getJobById, applyToJob } = useJobs();
+  const { applyToJob } = useJobs();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
+  const [job, setJob] = useState<JobForm | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const job = getJobById(id || '');
+  // Fetch job from API
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const token = await getAccessToken();
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const res = await fetch(`${API_BASE}/api/jobfinder/forms/${id}/`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setJob(data);
+        } else if (res.status === 404) {
+          setError('Không tìm thấy công việc');
+        } else {
+          setError('Có lỗi xảy ra');
+        }
+      } catch (e) {
+        setError('Không thể tải thông tin công việc');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!job) {
+    if (id) {
+      fetchJob();
+    }
+  }, [id]);
+
+  // Helper functions
+  const getCompanyName = () => {
+    if (job?.verified_company === 'other' && job?.verified_company_other) {
+      return job.verified_company_other;
+    }
+    return job?.display_verified_company || job?.verified_company || 'Chưa có công ty';
+  };
+
+  const getLocation = () => {
+    const parts = [job?.address, job?.ward_name, job?.district_name, job?.province_name].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Chưa có địa chỉ';
+  };
+
+  const getSalary = () => {
+    if (!job?.salary_from) return 'Thương lượng';
+    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    if (job.salary_to) {
+      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+    }
+    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  // Split text by newlines into array
+  const textToList = (text?: string) => {
+    if (!text) return [];
+    return text.split('\n').map(s => s.trim()).filter(Boolean);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">Đang tải...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !job) {
     return (
       <div className="flex min-h-screen flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Không tìm thấy công việc</h2>
+            <h2 className="text-2xl font-bold mb-2">{error || 'Không tìm thấy công việc'}</h2>
             <Button onClick={() => navigate('/jobs')}>Quay lại danh sách</Button>
           </div>
         </div>
@@ -60,12 +169,12 @@ const JobDetail = () => {
   };
 
   const submitApplication = () => {
-    if (!user) return;
+    if (!user || !job) return;
 
-    applyToJob(job.id, {
-      jobId: job.id,
+    applyToJob(String(job.id), {
+      jobId: String(job.id),
       userId: user.id,
-      userName: user.name,
+      userName: user.name || user.username || '',
       userEmail: user.email,
       cvUrl: user.cvUrl,
       coverLetter,
@@ -80,13 +189,13 @@ const JobDetail = () => {
     setCoverLetter('');
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const companyName = getCompanyName();
+  const requirementsList = textToList(job.requirements);
+  const benefitsList = textToList(job.benefits);
+  const responsibilitiesList = textToList(job.responsibilities);
+
+  // Check if current user is the owner of this job (created_by returns username)
+  const isOwner = isAuthenticated && user && user.username === job.created_by;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -108,91 +217,140 @@ const JobDetail = () => {
               {/* Header */}
               <div className="flex items-start gap-6 mb-6">
                 <Avatar className="h-20 w-20 border">
-                  <AvatarImage src={job.companyLogo} alt={job.company} />
-                  <AvatarFallback>{job.company.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{companyName.charAt(0)}</AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
                   <div className="flex items-center gap-2 text-lg text-muted-foreground mb-4">
                     <Building2 className="h-5 w-5" />
-                    <span>{job.company}</span>
+                    <span>{companyName}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{job.location}</span>
+                      <span>{getLocation()}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold text-primary">{job.salary}</span>
+                      <span className="font-semibold text-primary">{getSalary()}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>Đăng ngày {formatDate(job.postedDate)}</span>
+                      <span>Đăng ngày {formatDate(job.created_at)}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    <Badge variant="default">
-                      <Briefcase className="h-3 w-3 mr-1" />
-                      {job.type}
-                    </Badge>
-                    <Badge variant="outline">{job.category}</Badge>
+                    {job.work_format && (
+                      <Badge variant="default">
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        {job.work_format}
+                      </Badge>
+                    )}
+                    {job.job_type && (
+                      <Badge variant="outline">{job.job_type}</Badge>
+                    )}
                   </div>
                 </div>
 
-                <Button size="lg" onClick={handleApply}>
-                  Ứng tuyển ngay
-                </Button>
+                {!isOwner && (
+                  <Button size="lg" onClick={handleApply}>
+                    Ứng tuyển ngay
+                  </Button>
+                )}
               </div>
 
               <Separator className="my-6" />
 
               {/* Description */}
-              <section className="mb-6">
-                <h2 className="text-xl font-semibold mb-3">Mô tả công việc</h2>
-                <p className="text-muted-foreground whitespace-pre-line break-words leading-relaxed">{job.description}</p>
-              </section>
+              {job.description && (
+                <section className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3">Mô tả công việc</h2>
+                  <p className="text-muted-foreground whitespace-pre-line break-words leading-relaxed">{job.description}</p>
+                </section>
+              )}
+
+              {/* Responsibilities */}
+              {responsibilitiesList.length > 0 && (
+                <section className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3">Trách nhiệm công việc</h2>
+                  <ul className="space-y-2">
+                    {responsibilitiesList.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Requirements */}
-              <section className="mb-6">
-                <h2 className="text-xl font-semibold mb-3">Yêu cầu ứng viên</h2>
-                <ul className="space-y-2">
-                  {job.requirements.map((req, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 break-words" />
-                      <span>{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+              {requirementsList.length > 0 && (
+                <section className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3">Yêu cầu ứng viên</h2>
+                  <ul className="space-y-2">
+                    {requirementsList.map((req, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 break-words" />
+                        <span>{req}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Required Experience */}
+              {job.required_experience && (
+                <section className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3">Kinh nghiệm yêu cầu</h2>
+                  <p className="text-muted-foreground">{job.required_experience}</p>
+                </section>
+              )}
 
               {/* Benefits */}
-              <section>
-                <h2 className="text-xl font-semibold mb-3 break-words">Quyền lợi</h2>
-                <ul className="space-y-2">
-                  {job.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+              {benefitsList.length > 0 && (
+                <section className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3 break-words">Quyền lợi</h2>
+                  <ul className="space-y-2">
+                    {benefitsList.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               <Separator className="my-6" />
 
-              {/* Email */}
-              {job.contactEmail && (
+              {/* Contact Email */}
+              {(job.contact_email || job.application_email) && (
                 <section className="mb-2">
                   <h2 className="text-xl font-semibold mb-3">Email liên hệ</h2>
                   <a
-                    href={`mailto:${job.contactEmail}`}
+                    href={`mailto:${job.application_email || job.contact_email}`}
                     className="text-primary underline underline-offset-4 break-words"
                   >
-                    {job.contactEmail}
+                    {job.application_email || job.contact_email}
+                  </a>
+                </section>
+              )}
+
+              {/* Application URL */}
+              {job.application_url && (
+                <section className="mb-2">
+                  <h2 className="text-xl font-semibold mb-3">Link ứng tuyển</h2>
+                  <a
+                    href={job.application_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4 break-words"
+                  >
+                    {job.application_url}
                   </a>
                 </section>
               )}

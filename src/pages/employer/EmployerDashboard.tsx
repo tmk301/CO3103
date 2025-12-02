@@ -1,4 +1,5 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth, authFetch, API_BASE } from '@/contexts/AuthContext';
 import { useJobs } from '@/contexts/JobsContext';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -7,34 +8,106 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, XCircle, Check, X, User as UserIcon, Plus, Briefcase, Users, Eye, Trash2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Check, X, User as UserIcon, Plus, Briefcase, Users, Eye, Trash2, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface JobForm {
+  id: number;
+  title: string;
+  verified_company?: string;
+  display_verified_company?: string;
+  province_name?: string;
+  district_name?: string;
+  ward_name?: string;
+  address?: string;
+  salary_from?: number;
+  salary_to?: number;
+  salary_currency?: string;
+  display_salary_currency?: string;
+  work_format?: string;
+  job_type?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  is_active: boolean;
+  created_at: string;
+  created_by?: string;
+}
+
 const EmployerDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const {
-    getJobsByEmployer,
     applications,
-    deleteJob,
     approveApplication,
     rejectApplication,
   } = useJobs();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  if (!user || !['user', 'admin'].includes(user.role)) {
+  const [jobs, setJobs] = useState<JobForm[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch jobs from API
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchJobs = async () => {
+      try {
+        const res = await authFetch(`${API_BASE}/api/jobfinder/forms/`, {}, () => {
+          logout();
+          navigate('/auth/login');
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Backend already filters by current user, so we get only our jobs
+          // Plus any public jobs - filter to only show our own
+          const myJobs = data.filter((j: JobForm) => 
+            j.created_by === user.username || j.created_by === user.email
+          );
+          setJobs(myJobs);
+        }
+      } catch (e) {
+        console.error('Failed to fetch jobs', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [user, logout, navigate]);
+
+  if (!user || !['user', 'admin'].includes(user.role ?? '')) {
     navigate('/');
     return null;
   }
 
-  // Lấy jobs của employer
-  const employerJobs = getJobsByEmployer(user.id);
-  const approvedJobsCount = employerJobs.filter(j => j.status === 'approved').length;
-  const rejectedJobsCount = employerJobs.filter(j => j.status === 'rejected').length;
+  // Get job status directly from backend
+  const getJobStatus = (job: JobForm): 'pending' | 'approved' | 'rejected' => {
+    return job.status;
+  };
+
+  // Stats
+  const pendingJobsCount = jobs.filter(j => j.status === 'pending').length;
+  const approvedJobsCount = jobs.filter(j => j.status === 'approved').length;
+  const rejectedJobsCount = jobs.filter(j => j.status === 'rejected').length;
+
+  // Build location string
+  const getLocation = (job: JobForm) => {
+    const parts = [job.address, job.ward_name, job.district_name, job.province_name].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Chưa có địa chỉ';
+  };
+
+  // Build salary string  
+  const getSalary = (job: JobForm) => {
+    if (!job.salary_from) return 'Thương lượng';
+    const currency = job.display_salary_currency || job.salary_currency || 'VND';
+    if (job.salary_to) {
+      return `${job.salary_from.toLocaleString()} - ${job.salary_to.toLocaleString()} ${currency}`;
+    }
+    return `Từ ${job.salary_from.toLocaleString()} ${currency}`;
+  };
 
   // Gộp ứng viên cho các job của employer
   const jobApplications = applications.filter(app =>
-    employerJobs.some(job => job.id === app.jobId)
+    jobs.some(job => String(job.id) === app.jobId)
   );
 
   // Badge trạng thái job
@@ -79,15 +152,42 @@ const EmployerDashboard = () => {
     );
   };
 
-  const handleDeleteJob = (jobId: string) => {
+  const handleDeleteJob = async (jobId: number) => {
     if (confirm('Bạn có chắc chắn muốn xóa tin tuyển dụng này?')) {
-      deleteJob(jobId);
-      toast({ title: 'Đã xóa', description: 'Tin tuyển dụng đã được xóa' });
+      try {
+        const res = await authFetch(`${API_BASE}/api/jobfinder/forms/${jobId}/`, {
+          method: 'DELETE',
+        }, () => {
+          logout();
+          navigate('/auth/login');
+        });
+        if (res.ok) {
+          setJobs(prev => prev.filter(j => j.id !== jobId));
+          toast({ title: 'Đã xóa', description: 'Tin tuyển dụng đã được xóa' });
+        } else {
+          toast({ title: 'Lỗi', description: 'Không thể xóa tin', variant: 'destructive' });
+        }
+      } catch (e) {
+        toast({ title: 'Lỗi', description: 'Không thể xóa tin', variant: 'destructive' });
+      }
     }
   };
 
   const getJobTitle = (jobId: string) =>
-    employerJobs.find(j => j.id === jobId)?.title || '—';
+    jobs.find(j => String(j.id) === jobId)?.title || '—';
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <div className="h-16" />
+        <main className="flex-1 py-8 flex items-center justify-center">
+          <p className="text-muted-foreground">Đang tải...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -107,15 +207,25 @@ const EmployerDashboard = () => {
             </Button>
           </div>
 
-          {/* Stats: thêm thẻ Bị từ chối */}
-          <div className="grid gap-4 md:grid-cols-4 mb-8">
+          {/* Stats */}
+          <div className="grid gap-4 md:grid-cols-5 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Tin đã đăng</CardTitle>
-                <Briefcase className="h-4 w-4 text-warning" />
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-warning">{employerJobs.length}</div>
+                <div className="text-2xl font-bold">{jobs.length}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Chờ duyệt</CardTitle>
+                <Clock className="h-4 w-4 text-warning" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-warning">{pendingJobsCount}</div>
               </CardContent>
             </Card>
 
@@ -150,10 +260,11 @@ const EmployerDashboard = () => {
             </Card>
           </div>
 
-          {/* Tabs: Tin đã đăng | Bài đăng bị từ chối | Ứng viên */}
+          {/* Tabs */}
           <Tabs defaultValue="jobs" className="space-y-6">
             <TabsList>
               <TabsTrigger value="jobs">Tin đã đăng</TabsTrigger>
+              <TabsTrigger value="pendingJobs">Chờ duyệt</TabsTrigger>
               <TabsTrigger value="approvedJobs">Được duyệt</TabsTrigger>
               <TabsTrigger value="rejectedJobs">Bị từ chối</TabsTrigger>
               <TabsTrigger value="applications">Ứng viên</TabsTrigger>
@@ -161,7 +272,7 @@ const EmployerDashboard = () => {
 
             {/* Tin đã đăng (ALL) */}
             <TabsContent value="jobs" className="space-y-4">
-              {employerJobs.length === 0 ? (
+              {jobs.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -171,27 +282,30 @@ const EmployerDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                employerJobs.map(job => (
+                jobs.map(job => (
                   <Card key={job.id}>
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-3">
                             <h3 className="font-semibold">{job.title}</h3>
-                            {jobStatusBadge(job.status)}
+                            {jobStatusBadge(getJobStatus(job))}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {job.location} • {job.salary} • {job.type}
+                            {job.display_verified_company || 'Chưa có công ty'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {getLocation(job)} • {getSalary(job)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Đăng ngày {new Date(job.postedDate).toLocaleDateString('vi-VN')}
+                            Đăng ngày {new Date(job.created_at).toLocaleDateString('vi-VN')}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <Button
                             size="icon"
-                            variant="view"
+                            variant="outline"
                             onClick={() => navigate(`/jobs/${job.id}`)}
                             title="Xem chi tiết"
                           >
@@ -199,8 +313,7 @@ const EmployerDashboard = () => {
                           </Button>
                           <Button
                             size="icon"
-                            variant="rejected"
-                            className="hover:opacity-90"
+                            variant="destructive"
                             onClick={() => handleDeleteJob(job.id)}
                             title="Xóa tin"
                           >
@@ -214,18 +327,18 @@ const EmployerDashboard = () => {
               )}
             </TabsContent>
 
-            {/* Tin BỊ TỪ CHỐI */}
-            <TabsContent value="approvedJobs" className="space-y-4">
-              {employerJobs.filter(j => j.status === 'approved').length === 0 ? (
+            {/* Tin CHỜ DUYỆT */}
+            <TabsContent value="pendingJobs" className="space-y-4">
+              {jobs.filter(j => getJobStatus(j) === 'pending').length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Không có tin nào được duyệt</p>
+                    <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Không có tin nào đang chờ duyệt</p>
                   </CardContent>
                 </Card>
               ) : (
-                employerJobs
-                  .filter(j => j.status === 'approved')
+                jobs
+                  .filter(j => getJobStatus(j) === 'pending')
                   .map(job => (
                     <Card key={job.id}>
                       <CardContent className="p-6">
@@ -233,19 +346,22 @@ const EmployerDashboard = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
                               <h3 className="font-semibold">{job.title}</h3>
-                              {jobStatusBadge(job.status)}
+                              {jobStatusBadge('pending')}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {job.location} • {job.salary} • {job.type}
+                              {job.display_verified_company || 'Chưa có công ty'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {getLocation(job)} • {getSalary(job)}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Đăng ngày {new Date(job.postedDate).toLocaleDateString('vi-VN')}
+                              Đăng ngày {new Date(job.created_at).toLocaleDateString('vi-VN')}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
                               size="icon"
-                              variant="view"
+                              variant="outline"
                               onClick={() => navigate(`/jobs/${job.id}`)}
                               title="Xem chi tiết"
                             >
@@ -253,7 +369,63 @@ const EmployerDashboard = () => {
                             </Button>
                             <Button
                               size="icon"
-                              variant="rejected"
+                              variant="destructive"
+                              onClick={() => handleDeleteJob(job.id)}
+                              title="Xóa tin"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+              )}
+            </TabsContent>
+
+            {/* Tin ĐƯỢC DUYỆT */}
+            <TabsContent value="approvedJobs" className="space-y-4">
+              {jobs.filter(j => getJobStatus(j) === 'approved').length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Không có tin nào được duyệt</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                jobs
+                  .filter(j => getJobStatus(j) === 'approved')
+                  .map(job => (
+                    <Card key={job.id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold">{job.title}</h3>
+                              {jobStatusBadge('approved')}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {job.display_verified_company || 'Chưa có công ty'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {getLocation(job)} • {getSalary(job)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Đăng ngày {new Date(job.created_at).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => navigate(`/jobs/${job.id}`)}
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="destructive"
                               onClick={() => handleDeleteJob(job.id)}
                               title="Xóa tin"
                             >
@@ -269,7 +441,7 @@ const EmployerDashboard = () => {
 
             {/* Tin BỊ TỪ CHỐI */}
             <TabsContent value="rejectedJobs" className="space-y-4">
-              {employerJobs.filter(j => j.status === 'rejected').length === 0 ? (
+              {jobs.filter(j => getJobStatus(j) === 'rejected').length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -277,8 +449,8 @@ const EmployerDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                employerJobs
-                  .filter(j => j.status === 'rejected')
+                jobs
+                  .filter(j => getJobStatus(j) === 'rejected')
                   .map(job => (
                     <Card key={job.id}>
                       <CardContent className="p-6">
@@ -286,19 +458,22 @@ const EmployerDashboard = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
                               <h3 className="font-semibold">{job.title}</h3>
-                              {jobStatusBadge(job.status)}
+                              {jobStatusBadge('rejected')}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {job.location} • {job.salary} • {job.type}
+                              {job.display_verified_company || 'Chưa có công ty'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {getLocation(job)} • {getSalary(job)}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Đăng ngày {new Date(job.postedDate).toLocaleDateString('vi-VN')}
+                              Đăng ngày {new Date(job.created_at).toLocaleDateString('vi-VN')}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
                               size="icon"
-                              variant="view"
+                              variant="outline"
                               onClick={() => navigate(`/jobs/${job.id}`)}
                               title="Xem chi tiết"
                             >
@@ -306,7 +481,7 @@ const EmployerDashboard = () => {
                             </Button>
                             <Button
                               size="icon"
-                              variant="rejected"
+                              variant="destructive"
                               onClick={() => handleDeleteJob(job.id)}
                               title="Xóa tin"
                             >
@@ -320,7 +495,7 @@ const EmployerDashboard = () => {
               )}
             </TabsContent>
 
-            {/* Ứng viên (HIỂN THỊ TẤT CẢ, không ẩn sau khi duyệt/từ chối) */}
+            {/* Ứng viên */}
             <TabsContent value="applications" className="space-y-4">
               {jobApplications.length === 0 ? (
                 <Card>

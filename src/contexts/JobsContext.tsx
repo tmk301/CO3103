@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as JobAPI from '../lib/jobfinder';
 
 export type JobType = 'full-time' | 'part-time' | 'hybrid' | 'remote';
 export type JobStatus = 'pending' | 'approved' | 'rejected';
@@ -148,6 +149,18 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     const savedApps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || '[]');
     setJobs(savedJobs);
     setApplications(savedApps);
+
+    // If backend is configured, fetch jobs from API and replace demo/local data
+    (async () => {
+      try {
+        const remote = await JobAPI.listForms();
+        if (remote && remote.length > 0) {
+          setJobs(remote);
+        }
+      } catch (e) {
+        // ignore and keep local/demo data
+      }
+    })();
   }, []);
 
   const saveJobs = (newJobs: Job[]) => {
@@ -161,27 +174,60 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addJob = (job: Omit<Job, 'id' | 'postedDate' | 'status'>) => {
-    const newJob: Job = {
-      ...job,
-      id: Date.now().toString(),
-      postedDate: new Date().toISOString(),
-      status: 'pending',
-    };
-    saveJobs([...jobs, newJob]);
+    (async () => {
+      try {
+        const payload = {
+          title: job.title,
+          description: job.description,
+          address: job.location,
+          // minimal mapping; caller should use form UI to send correct fields
+        };
+        const created = await JobAPI.createForm(payload);
+        saveJobs([...jobs, created]);
+      } catch (e) {
+        // fallback to local behaviour
+        const newJob: Job = {
+          ...job,
+          id: Date.now().toString(),
+          postedDate: new Date().toISOString(),
+          status: 'pending',
+        };
+        saveJobs([...jobs, newJob]);
+      }
+    })();
   };
 
   const updateJob = (id: string, updates: Partial<Job>) => {
-    const updatedJobs = jobs.map(job =>
-      job.id === id ? { ...job, ...updates } : job
-    );
-    saveJobs(updatedJobs);
+    (async () => {
+      try {
+        await JobAPI.updateForm(id, updates);
+        const refreshed = await JobAPI.getForm(id);
+        const updatedJobs = jobs.map(job => (job.id === id ? refreshed : job));
+        saveJobs(updatedJobs);
+      } catch (e) {
+        const updatedJobs = jobs.map(job =>
+          job.id === id ? { ...job, ...updates } : job
+        );
+        saveJobs(updatedJobs);
+      }
+    })();
   };
 
   const deleteJob = (id: string) => {
-    const nextJobs = jobs.filter(job => job.id !== id);
-    const nextApps = applications.filter(app => app.jobId !== id);
-    saveJobs(nextJobs);
-    saveApplications(nextApps);
+    (async () => {
+      try {
+        await JobAPI.deleteForm(id);
+        const nextJobs = jobs.filter(job => job.id !== id);
+        const nextApps = applications.filter(app => app.jobId !== id);
+        saveJobs(nextJobs);
+        saveApplications(nextApps);
+      } catch (e) {
+        const nextJobs = jobs.filter(job => job.id !== id);
+        const nextApps = applications.filter(app => app.jobId !== id);
+        saveJobs(nextJobs);
+        saveApplications(nextApps);
+      }
+    })();
   };
 
   const deleteJobsByStatus = (statuses: JobStatus[]) => {
@@ -199,13 +245,26 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const applyToJob = (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => {
-    const newApplication: Application = {
-      ...application,
-      id: Date.now().toString(),
-      appliedDate: new Date().toISOString(),
-      status: 'pending',
-    };
-    saveApplications([...applications, newApplication]);
+    (async () => {
+      try {
+        await JobAPI.applyToJob(jobId, application);
+        const newApplication: Application = {
+          ...application,
+          id: Date.now().toString(),
+          appliedDate: new Date().toISOString(),
+          status: 'pending',
+        };
+        saveApplications([...applications, newApplication]);
+      } catch (e) {
+        const newApplication: Application = {
+          ...application,
+          id: Date.now().toString(),
+          appliedDate: new Date().toISOString(),
+          status: 'pending',
+        };
+        saveApplications([...applications, newApplication]);
+      }
+    })();
   };
 
   const updateApplicationStatus = (appId: string, status: Application['status']) => {

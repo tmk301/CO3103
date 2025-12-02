@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Briefcase, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
+import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -67,6 +67,14 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* show Quản lý tin đăng for employers */}
+                  {location.pathname !== '/employer/dashboard' && (
+                    <DropdownMenuItem onClick={() => navigate('/employer/dashboard')}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Quản lý tin đăng
                     </DropdownMenuItem>
                   )}
 
