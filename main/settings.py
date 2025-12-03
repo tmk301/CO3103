@@ -140,9 +140,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Cloudinary configuration
 import cloudinary
 cloudinary.config(
-    cloud_name = 'dywd8k3jk',
-    api_key = '943514128734734',
-    api_secret = 'bs0VZ0zINQp482PRY1v8USXJeW0',
+    cloud_name = os.getenv('CLOUD_NAME'),
+    api_key = os.getenv('API_KEY'),
+    api_secret = os.getenv('API_SECRET'),
     secure = True
 )
 
