@@ -89,6 +89,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     role = models.ForeignKey(Role, to_field='code', db_column='role_code', on_delete=models.SET_NULL, null=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
+    avatar = models.URLField(max_length=500, null=True, blank=True)  # Cloudinary URL
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -108,6 +109,8 @@ class Profile(models.Model):
     dob = models.DateField(null=True, blank=True)
     gender = models.ForeignKey(Gender, to_field='code', db_column='gender_code', on_delete=models.SET_NULL, null=True)
     bio = models.TextField(blank=True)
+    cv = models.URLField(max_length=500, null=True, blank=True)  # Cloudinary URL for CV
+    cv_filename = models.CharField(max_length=255, null=True, blank=True)  # Original filename
 
     def __str__(self):
         user_repr = getattr(self.user, 'username', str(self.user))

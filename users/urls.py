@@ -13,6 +13,8 @@ from .views import (
     ProfileViewSet,
     CustomTokenObtainPairView,
     UserViewSet,
+    AvatarUploadView,
+    CVUploadView,
 )
 
 router = DefaultRouter()
@@ -29,4 +31,6 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('avatar/', AvatarUploadView.as_view(), name='avatar-upload'),
+    path('cv/', CVUploadView.as_view(), name='cv-upload'),
 ]

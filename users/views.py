@@ -5,6 +5,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+
+import cloudinary
+import cloudinary.uploader
 
 from django.contrib.auth.models import update_last_login
 
@@ -160,6 +164,177 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         user_obj.status = new_status
         user_obj.save()
         return Response({'detail': f'User status updated to {new_status.name}.', 'status': new_status.code})
+
+
+class AvatarUploadView(APIView):
+    """Upload avatar for current user to Cloudinary."""
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        if 'avatar' not in request.FILES:
+            return Response({'detail': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        avatar_file = request.FILES['avatar']
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if avatar_file.content_type not in allowed_types:
+            return Response({'detail': 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate file size (max 5MB)
+        if avatar_file.size > 5 * 1024 * 1024:
+            return Response({'detail': 'File too large. Maximum size is 5MB.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Delete old avatar from Cloudinary if exists
+            if request.user.avatar:
+                # Extract public_id from URL
+                old_url = request.user.avatar
+                if 'cloudinary' in old_url:
+                    # Extract public_id: jobfinder/avatars/user_123
+                    parts = old_url.split('/')
+                    if 'avatars' in parts:
+                        idx = parts.index('avatars')
+                        public_id = '/'.join(parts[idx:]).split('.')[0]
+                        public_id = f"jobfinder/{public_id}"
+                        cloudinary.uploader.destroy(public_id)
+            
+            # Upload to Cloudinary with transformations
+            result = cloudinary.uploader.upload(
+                avatar_file,
+                folder='jobfinder/avatars',
+                public_id=f'user_{request.user.id}',
+                overwrite=True,
+                transformation=[
+                    {'width': 200, 'height': 200, 'crop': 'fill', 'gravity': 'face'},
+                    {'quality': 'auto', 'fetch_format': 'auto'}
+                ]
+            )
+            
+            avatar_url = result['secure_url']
+            
+            # Save URL to user model
+            request.user.avatar = avatar_url
+            request.user.save(update_fields=['avatar'])
+            
+            return Response({'avatar': avatar_url}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'detail': f'Upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request):
+        """Delete avatar from Cloudinary."""
+        if request.user.avatar:
+            try:
+                # Delete from Cloudinary
+                public_id = f'jobfinder/avatars/user_{request.user.id}'
+                cloudinary.uploader.destroy(public_id)
+                
+                request.user.avatar = None
+                request.user.save(update_fields=['avatar'])
+                return Response({'detail': 'Avatar deleted.'}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'detail': f'Delete failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'detail': 'No avatar to delete.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CVUploadView(APIView):
+    """Upload CV for current user to Cloudinary."""
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        """Get current user's CV info."""
+        try:
+            profile = request.user.profile
+            if profile.cv:
+                return Response({
+                    'cv': profile.cv,
+                    'filename': profile.cv_filename
+                }, status=status.HTTP_200_OK)
+            return Response({'cv': None, 'filename': None}, status=status.HTTP_200_OK)
+        except Profile.DoesNotExist:
+            return Response({'cv': None, 'filename': None}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        if 'cv' not in request.FILES:
+            return Response({'detail': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        cv_file = request.FILES['cv']
+        
+        # Validate file type
+        allowed_types = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+        allowed_extensions = ['.pdf', '.doc', '.docx']
+        
+        file_ext = '.' + cv_file.name.split('.')[-1].lower() if '.' in cv_file.name else ''
+        
+        if cv_file.content_type not in allowed_types and file_ext not in allowed_extensions:
+            return Response({'detail': 'Invalid file type. Allowed: PDF, DOC, DOCX.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate file size (max 10MB)
+        if cv_file.size > 10 * 1024 * 1024:
+            return Response({'detail': 'File too large. Maximum size is 10MB.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Get or create profile
+            profile, _ = Profile.objects.get_or_create(user=request.user)
+            
+            # Delete old CV from Cloudinary if exists
+            if profile.cv and 'cloudinary' in profile.cv:
+                parts = profile.cv.split('/')
+                if 'cvs' in parts:
+                    idx = parts.index('cvs')
+                    public_id = '/'.join(parts[idx:]).split('.')[0]
+                    public_id = f"jobfinder/{public_id}"
+                    cloudinary.uploader.destroy(public_id, resource_type='raw')
+            
+            # Upload to Cloudinary as raw file
+            result = cloudinary.uploader.upload(
+                cv_file,
+                folder='jobfinder/cvs',
+                public_id=f'user_{request.user.id}_cv',
+                overwrite=True,
+                resource_type='raw'  # Important for non-image files
+            )
+            
+            cv_url = result['secure_url']
+            
+            # Save URL and filename to profile
+            profile.cv = cv_url
+            profile.cv_filename = cv_file.name
+            profile.save(update_fields=['cv', 'cv_filename'])
+            
+            return Response({
+                'cv': cv_url,
+                'filename': cv_file.name
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'detail': f'Upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request):
+        """Delete CV from Cloudinary."""
+        try:
+            profile = request.user.profile
+            if profile.cv:
+                # Delete from Cloudinary
+                public_id = f'jobfinder/cvs/user_{request.user.id}_cv'
+                cloudinary.uploader.destroy(public_id, resource_type='raw')
+                
+                profile.cv = None
+                profile.cv_filename = None
+                profile.save(update_fields=['cv', 'cv_filename'])
+                return Response({'detail': 'CV deleted.'}, status=status.HTTP_200_OK)
+            return Response({'detail': 'No CV to delete.'}, status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            return Response({'detail': 'No CV to delete.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Profile ViewSet

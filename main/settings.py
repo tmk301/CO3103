@@ -133,6 +133,19 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary configuration
+import cloudinary
+cloudinary.config(
+    cloud_name = 'dywd8k3jk',
+    api_key = '943514128734734',
+    api_secret = 'bs0VZ0zINQp482PRY1v8USXJeW0',
+    secure = True
+)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

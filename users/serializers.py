@@ -31,7 +31,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['user', 'dob', 'gender', 'bio']
+        fields = ['user', 'dob', 'gender', 'bio', 'cv', 'cv_filename']
+        read_only_fields = ['cv', 'cv_filename']  # CV is uploaded via separate endpoint
 
 # User Serializers
 
@@ -40,10 +41,13 @@ class UserSerializer(serializers.ModelSerializer):
     status = serializers.SlugRelatedField(slug_field='code', queryset=Status.objects.all(), allow_null=True, required=False)
     dob = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    cv = serializers.SerializerMethodField()
+    cv_filename = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'phone', 'first_name', 'last_name', 'role', 'status', 'is_active', 'is_staff', 'date_joined', 'dob', 'gender']
+        fields = ['id', 'username', 'email', 'phone', 'first_name', 'last_name', 'role', 'status', 'is_active', 'is_staff', 'date_joined', 'dob', 'gender', 'avatar', 'cv', 'cv_filename']
         read_only_fields = ['username', 'is_active', 'is_staff', 'date_joined']
 
     def get_dob(self, obj):
@@ -55,6 +59,22 @@ class UserSerializer(serializers.ModelSerializer):
     def get_gender(self, obj):
         try:
             return obj.profile.gender.code if obj.profile.gender else None
+        except Profile.DoesNotExist:
+            return None
+
+    def get_avatar(self, obj):
+        # Avatar is now a URLField (string URL from Cloudinary), not ImageField
+        return obj.avatar if obj.avatar else None
+
+    def get_cv(self, obj):
+        try:
+            return obj.profile.cv if obj.profile.cv else None
+        except Profile.DoesNotExist:
+            return None
+
+    def get_cv_filename(self, obj):
+        try:
+            return obj.profile.cv_filename if obj.profile.cv_filename else None
         except Profile.DoesNotExist:
             return None
 
