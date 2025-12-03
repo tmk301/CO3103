@@ -323,6 +323,9 @@ const PostJob = () => {
     return <Navigate to="/" replace />;
   }
 
+  // Kiểm tra trạng thái tài khoản
+  const isAccountRestricted = user.status === 'PENDING_VERIFICATION' || user.status === 'LOCKED';
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -334,6 +337,25 @@ const PostJob = () => {
             Quay lại
           </Button>
 
+          {isAccountRestricted ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Đăng tin tuyển dụng</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    {user.status === 'PENDING_VERIFICATION' 
+                      ? 'Tài khoản của bạn chưa được xác minh. Vui lòng xác minh tài khoản để đăng tin tuyển dụng.'
+                      : 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.'}
+                  </p>
+                  <Button variant="outline" onClick={() => navigate('/profile')}>
+                    Đi đến hồ sơ
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Đăng tin tuyển dụng</CardTitle>
@@ -691,6 +713,7 @@ const PostJob = () => {
               </form>
             </CardContent>
           </Card>
+          )}
         </div>
       </main>
 

@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserRound, CheckCircle, Clock, Ban, MoreVertical, ShieldX, Lock, AlertCircle, Eye } from 'lucide-react';
+import { UserRound, CheckCircle, Clock, Ban, MoreVertical, ShieldX, Lock, AlertCircle, Eye, CircleHelp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from "react";
 
@@ -28,23 +28,39 @@ interface User {
   date_joined?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  'ACTIVE': { label: 'Hoạt động', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-3 w-3" /> },
-  'INACTIVE': { label: 'Vô hiệu hoá', color: 'bg-gray-100 text-gray-800', icon: <ShieldX className="h-3 w-3" /> },
-  'PENDING_VERIFICATION': { label: 'Chờ xác minh', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
-  'LOCKED': { label: 'Đã khoá', color: 'bg-orange-100 text-orange-800', icon: <Lock className="h-3 w-3" /> },
-  'SUSPENDED': { label: 'Tạm ngưng', color: 'bg-red-100 text-red-800', icon: <AlertCircle className="h-3 w-3" /> },
-  'BANNED': { label: 'Cấm', color: 'bg-red-200 text-red-900', icon: <Ban className="h-3 w-3" /> },
+interface StatusLookup {
+  code: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  is_active?: boolean;
+  order?: number;
+}
+
+// Map icon name to component
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  'CheckCircle': CheckCircle,
+  'ShieldX': ShieldX,
+  'Clock': Clock,
+  'Lock': Lock,
+  'AlertCircle': AlertCircle,
+  'Ban': Ban,
 };
 
-// Định nghĩa các action có thể thay đổi status
-const STATUS_ACTIONS = [
-  { status: 'ACTIVE', label: 'Kích hoạt', icon: <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> },
-  { status: 'INACTIVE', label: 'Vô hiệu hoá', icon: <ShieldX className="h-4 w-4 mr-2 text-gray-600" /> },
-  { status: 'LOCKED', label: 'Khoá', icon: <Lock className="h-4 w-4 mr-2 text-orange-600" /> },
-  { status: 'SUSPENDED', label: 'Tạm ngưng', icon: <AlertCircle className="h-4 w-4 mr-2 text-red-500" /> },
-  { status: 'BANNED', label: 'Cấm', icon: <Ban className="h-4 w-4 mr-2 text-red-700" /> },
-];
+// Default fallback colors
+const DEFAULT_BADGE_COLOR = 'bg-gray-100 text-gray-600';
+
+// Map badge color to icon color
+const BADGE_TO_ICON_COLOR: Record<string, string> = {
+  'text-green-800': 'text-green-600',
+  'text-gray-800': 'text-gray-600',
+  'text-yellow-800': 'text-yellow-600',
+  'text-orange-800': 'text-orange-600',
+  'text-red-800': 'text-red-500',
+  'text-red-900': 'text-red-700',
+  'text-blue-800': 'text-blue-600',
+  'text-purple-800': 'text-purple-600',
+};
 
 const AdminUsers = () => {
   const { user } = useAuth();
@@ -60,7 +76,14 @@ const AdminUsers = () => {
   };
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [statuses, setStatuses] = useState<StatusLookup[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper: lấy tên status từ code
+  const getStatusName = (code: string) => {
+    const s = statuses.find(s => s.code === code);
+    return s?.name || code;
+  };
 
   const fetchUsers = async () => {
     try {
@@ -79,10 +102,25 @@ const AdminUsers = () => {
     }
   };
 
+  const fetchStatuses = async () => {
+    try {
+      const token = await getAccessToken();
+      const res = await fetch(`${API_BASE}/api/users/statuses/`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStatuses(data.filter((s: StatusLookup) => s.is_active !== false));
+      }
+    } catch (e) {
+      console.error('Failed to fetch statuses', e);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await fetchUsers();
+      await Promise.all([fetchUsers(), fetchStatuses()]);
       setLoading(false);
     };
     loadData();
@@ -97,15 +135,67 @@ const AdminUsers = () => {
     u.status?.toUpperCase() !== 'ACTIVE'
   );
 
-  // Render dropdown items, ẩn status hiện tại
+  // Helper: get icon component from status
+  const getStatusIcon = (statusCode: string, size: 'sm' | 'md' = 'sm') => {
+    const status = statuses.find(s => s.code === statusCode);
+    const iconName = status?.icon || '';
+    const IconComponent = ICON_MAP[iconName] || CircleHelp;
+    const sizeClass = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
+    return <IconComponent className={sizeClass} />;
+  };
+
+  // Helper: get color from status
+  const getStatusColor = (statusCode: string) => {
+    const status = statuses.find(s => s.code === statusCode);
+    return status?.color || DEFAULT_BADGE_COLOR;
+  };
+
+  // Helper: get icon color from status (for dropdown actions)
+  const getIconColor = (statusCode: string) => {
+    const status = statuses.find(s => s.code === statusCode);
+    if (!status?.color) return 'text-gray-600';
+    // Extract text color from badge color class
+    const textColorMatch = status.color.match(/text-\w+-\d+/);
+    if (textColorMatch) {
+      return BADGE_TO_ICON_COLOR[textColorMatch[0]] || textColorMatch[0];
+    }
+    return 'text-gray-600';
+  };
+
+  // Render dropdown items with rules:
+  // 1. Hide current status
+  // 2. Hide PENDING_VERIFICATION if user is already verified (not pending)
+  // 3. ACTIVE always on top
   const renderStatusActions = (currentStatus: string | undefined, userId: number) => {
-    return STATUS_ACTIONS
-      .filter(action => action.status !== currentStatus?.toUpperCase())
-      .map(action => (
-        <DropdownMenuItem key={action.status} onClick={() => handleSetStatus(userId, action.status)}>
-          {action.icon} {action.label}
+    const currentCode = currentStatus?.toUpperCase() || '';
+    const isAlreadyVerified = currentCode !== 'PENDING_VERIFICATION';
+    
+    // Filter statuses
+    let availableStatuses = statuses.filter(s => {
+      // Hide current status
+      if (s.code === currentCode) return false;
+      // Hide PENDING_VERIFICATION if already verified
+      if (s.code === 'PENDING_VERIFICATION' && isAlreadyVerified) return false;
+      return true;
+    });
+
+    // Sort: ACTIVE first, then by order
+    availableStatuses = availableStatuses.sort((a, b) => {
+      if (a.code === 'ACTIVE') return -1;
+      if (b.code === 'ACTIVE') return 1;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+
+    return availableStatuses.map(s => {
+      const IconComponent = ICON_MAP[s.icon || ''] || CircleHelp;
+      const iconColor = getIconColor(s.code);
+      return (
+        <DropdownMenuItem key={s.code} onClick={() => handleSetStatus(userId, s.code)}>
+          <IconComponent className={`h-4 w-4 mr-2 ${iconColor}`} />
+          {s.name}
         </DropdownMenuItem>
-      ));
+      );
+    });
   };
 
   const getUserName = (u: User) => {
@@ -114,11 +204,12 @@ const AdminUsers = () => {
   };
 
   const getStatusBadge = (status?: string) => {
-    const config = STATUS_CONFIG[status?.toUpperCase() || ''] || { label: status || 'N/A', color: 'bg-gray-100 text-gray-600', icon: null };
+    const code = status?.toUpperCase() || '';
+    const colorClass = getStatusColor(code);
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.icon}
-        {config.label}
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+        {getStatusIcon(code, 'sm')}
+        {getStatusName(code)}
       </span>
     );
   };

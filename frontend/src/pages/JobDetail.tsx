@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface JobForm {
   id: number;
@@ -54,7 +55,7 @@ interface JobForm {
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { applyToJob } = useJobs();
+  const { applyToJob, applications } = useJobs();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -64,6 +65,17 @@ const JobDetail = () => {
   const [job, setJob] = useState<JobForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasApplied, setHasApplied] = useState(false);
+
+  // Check if user has already applied to this job
+  useEffect(() => {
+    if (user && id) {
+      const alreadyApplied = applications.some(
+        (app) => app.jobId === id && app.userId === user.id
+      );
+      setHasApplied(alreadyApplied);
+    }
+  }, [user, id, applications]);
 
   // Fetch job from API
   useEffect(() => {
@@ -193,8 +205,8 @@ const JobDetail = () => {
       // Determine which CV to use
       let cvUrl = user.cv;
       
-      // If using custom CV, upload it first
-      if (!useDefaultCV && customCV) {
+      // If user selected custom CV, upload it first (regardless of useDefaultCV)
+      if (customCV) {
         const token = await getAccessToken();
         const formData = new FormData();
         formData.append('cv', customCV);
@@ -211,14 +223,24 @@ const JobDetail = () => {
           const data = await uploadRes.json();
           cvUrl = data.cv;
         } else {
-          const errData = await uploadRes.json();
+          const errData = await uploadRes.json().catch(() => ({}));
           toast({
             title: 'Lỗi',
             description: errData.detail || 'Không thể tải lên CV',
             variant: 'destructive',
           });
+          setUploadingCV(false);
           return;
         }
+      } else if (!user.cv) {
+        // No default CV and no custom CV selected
+        toast({
+          title: 'Lỗi',
+          description: 'Vui lòng tải lên CV để ứng tuyển',
+          variant: 'destructive',
+        });
+        setUploadingCV(false);
+        return;
       }
 
       applyToJob(String(job.id), {
@@ -227,6 +249,7 @@ const JobDetail = () => {
         userName: user.name || user.username || '',
         userEmail: user.email,
         cvUrl: cvUrl,
+        coverLetter: '',
       });
 
       toast({
@@ -234,6 +257,7 @@ const JobDetail = () => {
         description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
       });
 
+      setHasApplied(true);
       setShowApplyDialog(false);
       setCustomCV(null);
       setUseDefaultCV(true);
@@ -314,10 +338,50 @@ const JobDetail = () => {
                   </div>
                 </div>
 
-                {!isOwner && (
-                  <Button size="lg" onClick={handleApply}>
-                    Ứng tuyển ngay
-                  </Button>
+                {!isOwner && user?.role !== 'admin' && (
+                  (() => {
+                    const isAccountRestricted = user?.status === 'PENDING_VERIFICATION' || user?.status === 'INACTIVE' || user?.status === 'LOCKED';
+                    const getRestrictionMessage = () => {
+                      if (user?.status === 'PENDING_VERIFICATION') return 'Tài khoản chưa được xác minh';
+                      if (user?.status === 'INACTIVE') return 'Tài khoản đang vô hiệu hóa';
+                      if (user?.status === 'LOCKED') return 'Tài khoản đang khóa';
+                      return '';
+                    };
+                    
+                    // Already applied - show disabled button with different text
+                    if (hasApplied) {
+                      return (
+                        <Button size="lg" disabled variant="secondary">
+                          Đã ứng tuyển
+                        </Button>
+                      );
+                    }
+                    
+                    if (isAccountRestricted) {
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0}>
+                                <Button size="lg" disabled>
+                                  Ứng tuyển ngay
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{getRestrictionMessage()}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    }
+                    
+                    return (
+                      <Button size="lg" onClick={handleApply}>
+                        Ứng tuyển ngay
+                      </Button>
+                    );
+                  })()
                 )}
               </div>
 
@@ -384,39 +448,41 @@ const JobDetail = () => {
                 </section>
               )}
 
-              <Separator className="my-6" />
-
               {/* Contact Email */}
               {(job.contact_email || job.application_email) && (
-                <section className="mb-2">
-                  <h2 className="text-xl font-semibold mb-3">Email liên hệ</h2>
-                  <a
-                    href={`mailto:${job.application_email || job.contact_email}`}
-                    className="text-primary underline underline-offset-4 break-words"
-                  >
-                    {job.application_email || job.contact_email}
-                  </a>
-                </section>
+                <>
+                  <Separator className="my-6" />
+                  <section className="mb-2">
+                    <h2 className="text-xl font-semibold mb-3">Email liên hệ</h2>
+                    <a
+                      href={`mailto:${job.application_email || job.contact_email}`}
+                      className="text-primary underline underline-offset-4 break-words"
+                    >
+                      {job.application_email || job.contact_email}
+                    </a>
+                  </section>
+                </>
               )}
 
               {/* Application URL */}
               {job.application_url && (
-                <section className="mb-2">
-                  <h2 className="text-xl font-semibold mb-3">Link ứng tuyển</h2>
-                  <a
-                    href={job.application_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline underline-offset-4 break-words"
-                  >
-                    {job.application_url}
-                  </a>
-                </section>
+                <>
+                  <Separator className="my-6" />
+                  <section className="mb-2">
+                    <h2 className="text-xl font-semibold mb-3">Link ứng tuyển</h2>
+                    <a
+                      href={job.application_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-4 break-words"
+                    >
+                      {job.application_url}
+                    </a>
+                  </section>
+                </>
               )}
 
-              <Separator className="my-6" />
-
-              <div className="text-center">
+              <div className="text-center mt-8">
                 <Button
                   variant="outline"
                   size="lg"
@@ -544,7 +610,7 @@ const JobDetail = () => {
               <Button 
                 onClick={submitApplication} 
                 className="flex-1"
-                disabled={uploadingCV || (useDefaultCV && !user?.cv) || (!useDefaultCV && !customCV)}
+                disabled={uploadingCV || (!user?.cv && !customCV)}
               >
                 {uploadingCV ? (
                   <>

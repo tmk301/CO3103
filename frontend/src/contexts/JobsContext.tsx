@@ -146,7 +146,25 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     initializeJobs();
     const savedJobs = JSON.parse(localStorage.getItem(JOBS_KEY) || '[]');
-    const savedApps = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || '[]');
+    let savedApps: Application[] = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || '[]');
+    
+    // Clean up duplicate applications - keep only the latest for each user+job combination
+    const appMap = new Map<string, Application>();
+    for (const app of savedApps) {
+      const key = `${app.userId}_${app.jobId}`;
+      const existing = appMap.get(key);
+      if (!existing || new Date(app.appliedDate) > new Date(existing.appliedDate)) {
+        appMap.set(key, app);
+      }
+    }
+    const cleanedApps = Array.from(appMap.values());
+    
+    // Save cleaned apps if there were duplicates
+    if (cleanedApps.length !== savedApps.length) {
+      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(cleanedApps));
+      savedApps = cleanedApps;
+    }
+    
     setJobs(savedJobs);
     setApplications(savedApps);
 
@@ -248,22 +266,22 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       try {
         await JobAPI.applyToJob(jobId, application);
-        const newApplication: Application = {
-          ...application,
-          id: Date.now().toString(),
-          appliedDate: new Date().toISOString(),
-          status: 'pending',
-        };
-        saveApplications([...applications, newApplication]);
       } catch (e) {
-        const newApplication: Application = {
-          ...application,
-          id: Date.now().toString(),
-          appliedDate: new Date().toISOString(),
-          status: 'pending',
-        };
-        saveApplications([...applications, newApplication]);
+        // API might not be available, continue with local storage
       }
+      
+      // Remove any existing applications from the same user for the same job
+      const filteredApps = applications.filter(
+        app => !(app.userId === application.userId && app.jobId === jobId)
+      );
+      
+      const newApplication: Application = {
+        ...application,
+        id: Date.now().toString(),
+        appliedDate: new Date().toISOString(),
+        status: 'pending',
+      };
+      saveApplications([...filteredApps, newApplication]);
     })();
   };
 

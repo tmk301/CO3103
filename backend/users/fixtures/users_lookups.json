@@ -4,9 +4,10 @@
     "pk": 1,
     "fields": {
       "code": "USER",
-      "name": "User",
+      "name": "Người dùng",
       "description": "",
-      "is_active": true
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -14,9 +15,10 @@
     "pk": 2,
     "fields": {
       "code": "ADMIN",
-      "name": "Admin",
+      "name": "Quản trị viên",
       "description": "",
-      "is_active": true
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -24,9 +26,12 @@
     "pk": 1,
     "fields": {
       "code": "ACTIVE",
-      "name": "Active",
-      "description": "Account is active.",
-      "is_active": true
+      "name": "Hoạt động",
+      "description": "Tài khoản đang hoạt động.",
+      "icon": "CheckCircle",
+      "color": "bg-green-100 text-green-800",
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -34,9 +39,12 @@
     "pk": 2,
     "fields": {
       "code": "INACTIVE",
-      "name": "Inactive",
-      "description": "Account is inactive.",
-      "is_active": true
+      "name": "Không hoạt động",
+      "description": "Tài khoản không hoạt động.",
+      "icon": "ShieldX",
+      "color": "bg-gray-100 text-gray-800",
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -44,9 +52,12 @@
     "pk": 3,
     "fields": {
       "code": "PENDING_VERIFICATION",
-      "name": "Pending Verification",
-      "description": "Account not verified (email/phone);",
-      "is_active": true
+      "name": "Chờ xác minh",
+      "description": "Tài khoản chưa được xác minh.",
+      "icon": "Clock",
+      "color": "bg-yellow-100 text-yellow-800",
+      "is_active": true,
+      "order": 3
     }
   },
   {
@@ -54,9 +65,12 @@
     "pk": 4,
     "fields": {
       "code": "LOCKED",
-      "name": "Locked",
-      "description": "Temporarily locked (too many failed logins).",
-      "is_active": true
+      "name": "Đã khoá",
+      "description": "Tài khoản đang khoá.",
+      "icon": "Lock",
+      "color": "bg-orange-100 text-orange-800",
+      "is_active": true,
+      "order": 4
     }
   },
   {
@@ -64,9 +78,12 @@
     "pk": 5,
     "fields": {
       "code": "SUSPENDED",
-      "name": "Suspended",
-      "description": "Temporarily disabled.",
-      "is_active": true
+      "name": "Tạm ngưng",
+      "description": "Tạm thời bị vô hiệu hoá.",
+      "icon": "AlertCircle",
+      "color": "bg-red-100 text-red-800",
+      "is_active": true,
+      "order": 5
     }
   },
   {
@@ -74,9 +91,12 @@
     "pk": 6,
     "fields": {
       "code": "BANNED",
-      "name": "Banned",
-      "description": "Permanently prohibited.",
-      "is_active": true
+      "name": "Cấm vĩnh viễn",
+      "description": "Bị cấm vĩnh viễn.",
+      "icon": "Ban",
+      "color": "bg-red-200 text-red-900",
+      "is_active": true,
+      "order": 6
     }
   },
   {
@@ -84,8 +104,9 @@
     "pk": 3,
     "fields": {
       "code": "MALE",
-      "name": "Male",
-      "is_active": true
+      "name": "Nam",
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -93,8 +114,9 @@
     "pk": 4,
     "fields": {
       "code": "FEMALE",
-      "name": "Female",
-      "is_active": true
+      "name": "Nữ",
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -102,8 +124,9 @@
     "pk": 5,
     "fields": {
       "code": "OTHER",
-      "name": "Other",
-      "is_active": true
+      "name": "Khác",
+      "is_active": true,
+      "order": 3
     }
   }
 ]

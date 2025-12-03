@@ -7,7 +7,8 @@
       "name": "FPT Software",
       "website": "https://www.fpt-software.com",
       "description": "Công ty phần mềm hàng đầu Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -18,7 +19,8 @@
       "name": "VNG Corporation",
       "website": "https://www.vng.com.vn",
       "description": "Công ty công nghệ, game và giải trí số",
-      "is_active": true
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -29,7 +31,8 @@
       "name": "Vingroup",
       "website": "https://www.vingroup.net",
       "description": "Tập đoàn kinh tế tư nhân đa ngành lớn nhất Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 3
     }
   },
   {
@@ -40,7 +43,8 @@
       "name": "Viettel Group",
       "website": "https://www.viettel.com.vn",
       "description": "Tập đoàn viễn thông quân đội",
-      "is_active": true
+      "is_active": true,
+      "order": 4
     }
   },
   {
@@ -51,7 +55,8 @@
       "name": "VNPT",
       "website": "https://www.vnpt.com.vn",
       "description": "Tập đoàn Bưu chính Viễn thông Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 5
     }
   },
   {
@@ -62,7 +67,8 @@
       "name": "MoMo",
       "website": "https://www.momo.vn",
       "description": "Ví điện tử và siêu ứng dụng tài chính",
-      "is_active": true
+      "is_active": true,
+      "order": 6
     }
   },
   {
@@ -73,7 +79,8 @@
       "name": "ZaloPay",
       "website": "https://zalopay.vn",
       "description": "Ví điện tử của VNG",
-      "is_active": true
+      "is_active": true,
+      "order": 7
     }
   },
   {
@@ -84,7 +91,8 @@
       "name": "Tiki Corporation",
       "website": "https://tiki.vn",
       "description": "Sàn thương mại điện tử",
-      "is_active": true
+      "is_active": true,
+      "order": 8
     }
   },
   {
@@ -95,7 +103,8 @@
       "name": "Shopee Vietnam",
       "website": "https://shopee.vn",
       "description": "Sàn thương mại điện tử",
-      "is_active": true
+      "is_active": true,
+      "order": 9
     }
   },
   {
@@ -106,7 +115,8 @@
       "name": "Lazada Vietnam",
       "website": "https://www.lazada.vn",
       "description": "Sàn thương mại điện tử thuộc Alibaba",
-      "is_active": true
+      "is_active": true,
+      "order": 10
     }
   },
   {
@@ -117,7 +127,8 @@
       "name": "Grab Vietnam",
       "website": "https://www.grab.com/vn",
       "description": "Siêu ứng dụng gọi xe và giao hàng",
-      "is_active": true
+      "is_active": true,
+      "order": 11
     }
   },
   {
@@ -128,7 +139,8 @@
       "name": "Be Group",
       "website": "https://be.com.vn",
       "description": "Ứng dụng gọi xe Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 12
     }
   },
   {
@@ -139,7 +151,8 @@
       "name": "Vietcombank",
       "website": "https://www.vietcombank.com.vn",
       "description": "Ngân hàng TMCP Ngoại thương Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 13
     }
   },
   {
@@ -150,7 +163,8 @@
       "name": "Techcombank",
       "website": "https://www.techcombank.com.vn",
       "description": "Ngân hàng TMCP Kỹ thương Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 14
     }
   },
   {
@@ -161,7 +175,8 @@
       "name": "VPBank",
       "website": "https://www.vpbank.com.vn",
       "description": "Ngân hàng TMCP Việt Nam Thịnh Vượng",
-      "is_active": true
+      "is_active": true,
+      "order": 15
     }
   },
   {
@@ -172,7 +187,8 @@
       "name": "MB Bank",
       "website": "https://www.mbbank.com.vn",
       "description": "Ngân hàng TMCP Quân đội",
-      "is_active": true
+      "is_active": true,
+      "order": 16
     }
   },
   {
@@ -183,7 +199,8 @@
       "name": "ACB",
       "website": "https://www.acb.com.vn",
       "description": "Ngân hàng TMCP Á Châu",
-      "is_active": true
+      "is_active": true,
+      "order": 17
     }
   },
   {
@@ -194,7 +211,8 @@
       "name": "BIDV",
       "website": "https://www.bidv.com.vn",
       "description": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 18
     }
   },
   {
@@ -205,7 +223,8 @@
       "name": "VIB",
       "website": "https://www.vib.com.vn",
       "description": "Ngân hàng TMCP Quốc tế Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 19
     }
   },
   {
@@ -216,7 +235,8 @@
       "name": "TPBank",
       "website": "https://tpb.vn",
       "description": "Ngân hàng TMCP Tiên Phong",
-      "is_active": true
+      "is_active": true,
+      "order": 20
     }
   },
   {
@@ -227,7 +247,8 @@
       "name": "NAB Innovation Centre Vietnam",
       "website": "https://www.nab.com.au",
       "description": "Trung tâm đổi mới sáng tạo của NAB Australia",
-      "is_active": true
+      "is_active": true,
+      "order": 21
     }
   },
   {
@@ -238,7 +259,8 @@
       "name": "Samsung Vietnam",
       "website": "https://www.samsung.com/vn",
       "description": "Samsung Electronics Vietnam",
-      "is_active": true
+      "is_active": true,
+      "order": 22
     }
   },
   {
@@ -249,7 +271,8 @@
       "name": "Bosch Vietnam",
       "website": "https://www.bosch.com.vn",
       "description": "Robert Bosch Engineering Vietnam",
-      "is_active": true
+      "is_active": true,
+      "order": 23
     }
   },
   {
@@ -260,7 +283,8 @@
       "name": "Intel Products Vietnam",
       "website": "https://www.intel.vn",
       "description": "Intel Products Vietnam",
-      "is_active": true
+      "is_active": true,
+      "order": 24
     }
   },
   {
@@ -271,7 +295,8 @@
       "name": "KMS Technology",
       "website": "https://kms-technology.com",
       "description": "Công ty phần mềm và dịch vụ công nghệ",
-      "is_active": true
+      "is_active": true,
+      "order": 25
     }
   },
   {
@@ -282,7 +307,8 @@
       "name": "NashTech",
       "website": "https://www.nashtechglobal.com",
       "description": "Công ty phần mềm và dịch vụ IT",
-      "is_active": true
+      "is_active": true,
+      "order": 26
     }
   },
   {
@@ -293,7 +319,8 @@
       "name": "Axon Active Vietnam",
       "website": "https://www.axonactive.com",
       "description": "Công ty phát triển phần mềm Thụy Sĩ",
-      "is_active": true
+      "is_active": true,
+      "order": 27
     }
   },
   {
@@ -304,7 +331,8 @@
       "name": "TMA Solutions",
       "website": "https://www.tmasolutions.com",
       "description": "Công ty phần mềm và giải pháp công nghệ",
-      "is_active": true
+      "is_active": true,
+      "order": 28
     }
   },
   {
@@ -315,7 +343,8 @@
       "name": "NFQ Asia",
       "website": "https://www.nfq.asia",
       "description": "Công ty công nghệ và tư vấn",
-      "is_active": true
+      "is_active": true,
+      "order": 29
     }
   },
   {
@@ -326,7 +355,8 @@
       "name": "Fossil Vietnam",
       "website": "https://www.fossil.com",
       "description": "Fossil Group Vietnam - R&D Center",
-      "is_active": true
+      "is_active": true,
+      "order": 30
     }
   },
   {
@@ -337,7 +367,8 @@
       "name": "TopDev",
       "website": "https://topdev.vn",
       "description": "Nền tảng tuyển dụng IT",
-      "is_active": true
+      "is_active": true,
+      "order": 31
     }
   },
   {
@@ -348,7 +379,8 @@
       "name": "TopCV",
       "website": "https://www.topcv.vn",
       "description": "Nền tảng tuyển dụng và việc làm",
-      "is_active": true
+      "is_active": true,
+      "order": 32
     }
   },
   {
@@ -359,7 +391,8 @@
       "name": "VietnamWorks",
       "website": "https://www.vietnamworks.com",
       "description": "Nền tảng tuyển dụng hàng đầu",
-      "is_active": true
+      "is_active": true,
+      "order": 33
     }
   },
   {
@@ -370,7 +403,8 @@
       "name": "Anphabe",
       "website": "https://www.anphabe.com",
       "description": "Mạng cộng đồng nghề nghiệp",
-      "is_active": true
+      "is_active": true,
+      "order": 34
     }
   },
   {
@@ -381,7 +415,8 @@
       "name": "CMC Corporation",
       "website": "https://cmc.com.vn",
       "description": "Tập đoàn Công nghệ CMC",
-      "is_active": true
+      "is_active": true,
+      "order": 35
     }
   },
   {
@@ -392,7 +427,8 @@
       "name": "MISA JSC",
       "website": "https://www.misa.vn",
       "description": "Công ty phần mềm kế toán và quản trị",
-      "is_active": true
+      "is_active": true,
+      "order": 36
     }
   },
   {
@@ -403,7 +439,8 @@
       "name": "VNPAY",
       "website": "https://vnpay.vn",
       "description": "Công ty cổ phần Giải pháp Thanh toán Việt Nam",
-      "is_active": true
+      "is_active": true,
+      "order": 37
     }
   },
   {
@@ -414,7 +451,8 @@
       "name": "Sendo",
       "website": "https://www.sendo.vn",
       "description": "Sàn thương mại điện tử",
-      "is_active": true
+      "is_active": true,
+      "order": 38
     }
   },
   {
@@ -425,7 +463,8 @@
       "name": "Bkav Corporation",
       "website": "https://www.bkav.com.vn",
       "description": "Công ty an ninh mạng và công nghệ",
-      "is_active": true
+      "is_active": true,
+      "order": 39
     }
   },
   {
@@ -436,7 +475,8 @@
       "name": "FPT Information System",
       "website": "https://www.fis.com.vn",
       "description": "Công ty Hệ thống Thông tin FPT",
-      "is_active": true
+      "is_active": true,
+      "order": 40
     }
   },
   {
@@ -447,7 +487,8 @@
       "name": "Khác",
       "website": "",
       "description": "Công ty khác không có trong danh sách",
-      "is_active": true
+      "is_active": true,
+      "order": 41
     }
   },
   {
@@ -457,7 +498,8 @@
       "code": "onsite",
       "name": "Làm việc tại văn phòng",
       "description": "Làm việc trực tiếp tại văn phòng công ty",
-      "is_active": true
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -467,7 +509,8 @@
       "code": "remote",
       "name": "Làm việc từ xa",
       "description": "Làm việc hoàn toàn từ xa, không cần đến văn phòng",
-      "is_active": true
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -477,7 +520,8 @@
       "code": "hybrid",
       "name": "Kết hợp",
       "description": "Kết hợp làm việc tại văn phòng và từ xa",
-      "is_active": true
+      "is_active": true,
+      "order": 3
     }
   },
   {
@@ -487,7 +531,8 @@
       "code": "flexible",
       "name": "Linh hoạt",
       "description": "Thời gian và địa điểm làm việc linh hoạt",
-      "is_active": true
+      "is_active": true,
+      "order": 4
     }
   },
   {
@@ -497,7 +542,8 @@
       "code": "other",
       "name": "Khác",
       "description": "Hình thức làm việc khác",
-      "is_active": true
+      "is_active": true,
+      "order": 5
     }
   },
   {
@@ -507,7 +553,8 @@
       "code": "fulltime",
       "name": "Toàn thời gian",
       "description": "Làm việc full-time (40 giờ/tuần)",
-      "is_active": true
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -517,7 +564,8 @@
       "code": "parttime",
       "name": "Bán thời gian",
       "description": "Làm việc part-time",
-      "is_active": true
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -527,7 +575,8 @@
       "code": "contract",
       "name": "Hợp đồng",
       "description": "Làm việc theo hợp đồng có thời hạn",
-      "is_active": true
+      "is_active": true,
+      "order": 3
     }
   },
   {
@@ -537,7 +586,8 @@
       "code": "freelance",
       "name": "Freelance",
       "description": "Làm việc tự do theo dự án",
-      "is_active": true
+      "is_active": true,
+      "order": 4
     }
   },
   {
@@ -547,7 +597,8 @@
       "code": "internship",
       "name": "Thực tập",
       "description": "Vị trí thực tập sinh",
-      "is_active": true
+      "is_active": true,
+      "order": 5
     }
   },
   {
@@ -557,7 +608,8 @@
       "code": "temporary",
       "name": "Tạm thời",
       "description": "Công việc tạm thời/theo mùa",
-      "is_active": true
+      "is_active": true,
+      "order": 6
     }
   },
   {
@@ -567,7 +619,8 @@
       "code": "volunteer",
       "name": "Tình nguyện",
       "description": "Công việc tình nguyện",
-      "is_active": true
+      "is_active": true,
+      "order": 7
     }
   },
   {
@@ -577,7 +630,8 @@
       "code": "other",
       "name": "Khác",
       "description": "Loại công việc khác",
-      "is_active": true
+      "is_active": true,
+      "order": 8
     }
   },
   {
@@ -587,7 +641,8 @@
       "code": "VND",
       "name": "Việt Nam Đồng",
       "symbol": "₫",
-      "is_active": true
+      "is_active": true,
+      "order": 1
     }
   },
   {
@@ -597,7 +652,8 @@
       "code": "USD",
       "name": "US Dollar",
       "symbol": "$",
-      "is_active": true
+      "is_active": true,
+      "order": 2
     }
   },
   {
@@ -607,7 +663,8 @@
       "code": "EUR",
       "name": "Euro",
       "symbol": "€",
-      "is_active": true
+      "is_active": true,
+      "order": 3
     }
   },
   {
@@ -617,7 +674,8 @@
       "code": "JPY",
       "name": "Japanese Yen",
       "symbol": "¥",
-      "is_active": true
+      "is_active": true,
+      "order": 4
     }
   },
   {
@@ -627,7 +685,8 @@
       "code": "KRW",
       "name": "Korean Won",
       "symbol": "₩",
-      "is_active": true
+      "is_active": true,
+      "order": 5
     }
   },
   {
@@ -637,7 +696,8 @@
       "code": "SGD",
       "name": "Singapore Dollar",
       "symbol": "S$",
-      "is_active": true
+      "is_active": true,
+      "order": 6
     }
   },
   {
@@ -647,7 +707,8 @@
       "code": "GBP",
       "name": "British Pound",
       "symbol": "£",
-      "is_active": true
+      "is_active": true,
+      "order": 7
     }
   },
   {
@@ -657,7 +718,8 @@
       "code": "AUD",
       "name": "Australian Dollar",
       "symbol": "A$",
-      "is_active": true
+      "is_active": true,
+      "order": 8
     }
   },
   {
@@ -667,7 +729,8 @@
       "code": "CNY",
       "name": "Chinese Yuan",
       "symbol": "¥",
-      "is_active": true
+      "is_active": true,
+      "order": 9
     }
   },
   {
@@ -677,7 +740,8 @@
       "code": "THB",
       "name": "Thai Baht",
       "symbol": "฿",
-      "is_active": true
+      "is_active": true,
+      "order": 10
     }
   },
   {
@@ -687,7 +751,8 @@
       "code": "other",
       "name": "Khác",
       "symbol": "",
-      "is_active": true
+      "is_active": true,
+      "order": 11
     }
   },
   {

@@ -87,6 +87,7 @@ const Login = () => {
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPw((v) => !v)}
                   className="absolute inset-y-0 right-2 flex items-center text-slate-500 hover:text-slate-700"
                   aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}

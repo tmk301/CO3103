@@ -38,24 +38,51 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
 # Lookup ViewSets
 
-class RoleViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Role.objects.all().order_by('code')
+class LookupViewSetMixin:
+    """Common behaviour for user lookup viewsets: read for all authenticated, write for admins."""
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+    @action(detail=False, methods=['post'], url_path='update-order')
+    def update_order(self, request):
+        """Bulk update the order of lookup items."""
+        items = request.data.get('items', [])
+        if not items:
+            return Response({'detail': 'No items provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        model = self.queryset.model
+        try:
+            with transaction.atomic():
+                for item_data in items:
+                    code = item_data.get('code')
+                    order = item_data.get('order')
+                    if code is not None and order is not None:
+                        model.objects.filter(code=code).update(order=order)
+            return Response({'detail': 'Order updated successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RoleViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
+    queryset = Role.objects.all().order_by('order', 'code')
     serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    lookup_field = 'code'
 
-class GenderViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Gender.objects.all().order_by('code')
+class GenderViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
+    queryset = Gender.objects.all().order_by('order', 'code')
     serializer_class = GenderSerializer
-    # Allow anonymous read access so frontend can load gender lookup values
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []
-
-class StatusViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Status.objects.all().order_by('code')
-    serializer_class = StatusSerializer
-    permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    lookup_field = 'code'
+
+class StatusViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
+    queryset = Status.objects.all().order_by('order', 'code')
+    serializer_class = StatusSerializer
+    authentication_classes = [JWTAuthentication]
+    lookup_field = 'code'
 
 # Registration
 
@@ -107,23 +134,34 @@ class ChangePasswordView(APIView):
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
-class IsAdminRole(permissions.BasePermission):
-    """Allow access only to admin users (by role or is_staff)."""
+class IsAdminOrReadSingleUser(permissions.BasePermission):
+    """
+    Allow admin full access.
+    Allow authenticated users to retrieve a single user (for viewing applicant profiles).
+    """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
+        
+        # Admin has full access
         if request.user.is_staff:
             return True
         if hasattr(request.user, 'role') and request.user.role:
-            return request.user.role.code.upper() == 'ADMIN'
+            if request.user.role.code.upper() == 'ADMIN':
+                return True
+        
+        # Non-admin can only retrieve single user, not list
+        if view.action == 'retrieve':
+            return True
+        
         return False
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """Admin-only viewset to list all users."""
+    """ViewSet to manage users. Admin can list all, others can only retrieve single user."""
     queryset = CustomUser.objects.select_related('role', 'status').all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminRole]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadSingleUser]
     authentication_classes = [JWTAuthentication]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['role__code', 'status__code', 'is_active']

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,14 @@ import { cn } from '@/lib/utils';
 interface Gender {
   code: string;
   name: string;
+  is_active?: boolean;
+}
+
+interface StatusLookup {
+  code: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
 }
 
 const Profile = () => {
@@ -53,6 +62,7 @@ const Profile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [genders, setGenders] = useState<Gender[]>([]);
+  const [statuses, setStatuses] = useState<StatusLookup[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCV, setUploadingCV] = useState(false);
@@ -71,6 +81,7 @@ const Profile = () => {
       if (!viewedIdParam || isSelf) return;
       
       setLoadingUser(true);
+      
       try {
         const token = await getAccessToken();
         const res = await fetch(`${API_BASE}/api/users/users/${viewedIdParam}/`, {
@@ -91,6 +102,8 @@ const Profile = () => {
             dob: data.dob,
             status: data.status,
             avatar: data.avatar,
+            cv: data.cv,
+            cv_filename: data.cv_filename,
           });
         } else {
           toast({ title: 'Lỗi', description: 'Không thể tải thông tin người dùng', variant: 'destructive' });
@@ -132,7 +145,7 @@ const Profile = () => {
         const res = await fetch(`${API_BASE}/api/users/genders/`);
         if (res.ok) {
           const data = await res.json();
-          setGenders(data);
+          setGenders(data.filter((g: Gender) => g.is_active !== false));
         }
       } catch (e) {
         console.error('Failed to fetch genders', e);
@@ -140,6 +153,36 @@ const Profile = () => {
     };
     fetchGenders();
   }, []);
+
+  // Fetch statuses
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const token = await getAccessToken();
+        const headers: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`${API_BASE}/api/users/statuses/`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setStatuses(data.filter((s: StatusLookup) => s.is_active !== false));
+        }
+      } catch (e) {
+        console.error('Failed to fetch statuses', e);
+      }
+    };
+    fetchStatuses();
+  }, []);
+
+  // Helper: lấy tên giới tính từ code
+  const getGenderName = (code: string) => {
+    const g = genders.find(g => g.code === code);
+    return g?.name || code;
+  };
+
+  // Helper: lấy tên trạng thái từ code
+  const getStatusName = (code: string) => {
+    const s = statuses.find(s => s.code === code);
+    return s?.name || code;
+  };
 
   const userApplications = user ? getUserApplications(user.id) : [];
 
@@ -399,7 +442,7 @@ const Profile = () => {
     );
   };
 
-  const getAccountStatusBadge = (status: string) => {
+  const getAccountStatusBadge = (statusCode: string) => {
     const variants: Record<string, string> = {
       'ACTIVE': 'bg-green-100 text-green-700',
       'INACTIVE': 'bg-gray-100 text-gray-700',
@@ -408,17 +451,9 @@ const Profile = () => {
       'SUSPENDED': 'bg-red-100 text-red-700',
       'BANNED': 'bg-red-200 text-red-800',
     };
-    const labels: Record<string, string> = {
-      'ACTIVE': 'Hoạt động',
-      'INACTIVE': 'Vô hiệu hoá',
-      'PENDING_VERIFICATION': 'Chờ xác minh',
-      'LOCKED': 'Đã khoá',
-      'SUSPENDED': 'Tạm ngưng',
-      'BANNED': 'Bị cấm',
-    };
     return (
-      <Badge className={`${variants[status] || 'bg-gray-100 text-gray-700'} cursor-default pointer-events-none`}>
-        {labels[status] || status}
+      <Badge className={`${variants[statusCode] || 'bg-gray-100 text-gray-700'} cursor-default pointer-events-none`}>
+        {getStatusName(statusCode)}
       </Badge>
     );
   };
@@ -472,7 +507,9 @@ const Profile = () => {
     );
   }
 
-  const tabCols = user.role === 'user' ? 'grid-cols-2' : 'grid-cols-1';
+  // Chỉ hiển thị tab "Đã ứng tuyển" khi xem profile của chính mình và là user
+  const showApplicationsTab = isSelf && displayUser?.role === 'user';
+  const tabCols = showApplicationsTab ? 'grid-cols-2' : 'grid-cols-1';
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -497,8 +534,8 @@ const Profile = () => {
                 Thông tin
               </TabsTrigger>
 
-              {/* CHỈ hiển thị cho user */}
-              {displayUser.role === 'user' && isSelf && (
+              {/* CHỈ hiển thị cho user khi xem profile của chính mình */}
+              {showApplicationsTab && (
                 <TabsTrigger value="applications">
                   <Briefcase className="h-4 w-4 mr-2" />
                   Đã ứng tuyển ({userApplications.length})
@@ -692,7 +729,7 @@ const Profile = () => {
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" className="w-full justify-between">
                                 <span>
-                                  {gender === 'MALE' ? 'Nam' : gender === 'FEMALE' ? 'Nữ' : gender === 'OTHER' ? 'Khác' : 'Chọn giới tính'}
+                                  {gender ? getGenderName(gender) : 'Chọn giới tính'}
                                 </span>
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
@@ -700,14 +737,14 @@ const Profile = () => {
                             <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                               {genders.map(g => (
                                 <DropdownMenuItem key={g.code} onClick={() => setGender(g.code)}>
-                                  {g.name === 'Male' ? 'Nam' : g.name === 'Female' ? 'Nữ' : g.name === 'Other' ? 'Khác' : g.name}
+                                  {g.name}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         ) : (
                           <Input
-                            value={displayUser?.gender === 'MALE' ? 'Nam' : displayUser?.gender === 'FEMALE' ? 'Nữ' : displayUser?.gender === 'OTHER' ? 'Khác' : ''}
+                            value={displayUser?.gender ? getGenderName(displayUser.gender) : ''}
                             readOnly
                             disabled
                             className="pointer-events-none bg-muted/40"
@@ -788,27 +825,40 @@ const Profile = () => {
                                 accept=".pdf,.doc,.docx"
                                 onChange={handleCVUpload}
                                 className="hidden"
-                                disabled={uploadingCV}
+                                disabled={uploadingCV || displayUser?.status === 'PENDING_VERIFICATION'}
                               />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => document.getElementById('cv-upload')?.click()}
-                                disabled={uploadingCV}
-                              >
-                                {uploadingCV ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Đang tải...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    {displayUser?.cv ? 'Thay đổi CV' : 'Tải lên CV'}
-                                  </>
-                                )}
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span tabIndex={displayUser?.status === 'PENDING_VERIFICATION' ? 0 : -1}>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => document.getElementById('cv-upload')?.click()}
+                                        disabled={uploadingCV || displayUser?.status === 'PENDING_VERIFICATION'}
+                                      >
+                                        {uploadingCV ? (
+                                          <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Đang tải...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <FileText className="h-4 w-4 mr-2" />
+                                            {displayUser?.cv ? 'Thay đổi CV' : 'Tải lên CV'}
+                                          </>
+                                        )}
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {displayUser?.status === 'PENDING_VERIFICATION' && (
+                                    <TooltipContent>
+                                      <p>Tài khoản chưa được xác minh</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           )}
                         </div>
@@ -830,10 +880,27 @@ const Profile = () => {
                             </Button>
                           </>
                         ) : (
-                          <Button type="button" onClick={() => setIsEditing(true)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Chỉnh sửa thông tin
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span tabIndex={displayUser?.status === 'PENDING_VERIFICATION' ? 0 : -1}>
+                                  <Button 
+                                    type="button" 
+                                    onClick={() => setIsEditing(true)}
+                                    disabled={displayUser?.status === 'PENDING_VERIFICATION'}
+                                  >
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Chỉnh sửa thông tin
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {displayUser?.status === 'PENDING_VERIFICATION' && (
+                                <TooltipContent>
+                                  <p>Tài khoản chưa được xác minh</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     )}

@@ -12,6 +12,10 @@ class VerifiedCompany(models.Model):
     website = models.URLField(blank=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'name']
 
     def __str__(self):
         return self.name
@@ -21,6 +25,10 @@ class WorkFormat(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'code']
 
     def __str__(self):
         return self.name
@@ -30,6 +38,10 @@ class JobType(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'code']
 
     def __str__(self):
         return self.name
@@ -39,6 +51,10 @@ class Currency(models.Model):
     name = models.CharField(max_length=50, unique=True)
     symbol = models.CharField(max_length=10, blank=True)
     is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'code']
 
     def __str__(self):
         return self.name

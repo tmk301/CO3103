@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, XCircle, Check, X, User as UserIcon, Plus, Briefcase, Users, Eye, Trash2, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Check, X, User as UserIcon, Plus, Briefcase, Users, Eye, Trash2, Clock, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface JobForm {
@@ -53,6 +53,7 @@ const EmployerDashboard = () => {
 
   const [jobs, setJobs] = useState<JobForm[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userStatuses, setUserStatuses] = useState<Record<string, string>>({});
 
   // Fetch jobs from API
   useEffect(() => {
@@ -82,6 +83,37 @@ const EmployerDashboard = () => {
 
     fetchJobs();
   }, [user, logout, navigate]);
+
+  // Fetch user statuses for all applicants
+  useEffect(() => {
+    const fetchUserStatuses = async () => {
+      const userIds = [...new Set(applications.map(app => app.userId))];
+      const statuses: Record<string, string> = {};
+      
+      for (const userId of userIds) {
+        try {
+          const res = await authFetch(`${API_BASE}/api/users/users/${userId}/`, {}, () => {});
+          if (res.ok) {
+            const userData = await res.json();
+            // Lấy status từ response, nếu không có thì đánh dấu là UNKNOWN để ẩn
+            statuses[userId] = userData.status || 'UNKNOWN';
+          } else {
+            // Nếu fetch thất bại, đánh dấu là UNKNOWN để ẩn user này
+            statuses[userId] = 'UNKNOWN';
+          }
+        } catch (e) {
+          // Nếu có lỗi, đánh dấu là UNKNOWN để ẩn user này
+          statuses[userId] = 'UNKNOWN';
+        }
+      }
+      
+      setUserStatuses(statuses);
+    };
+
+    if (applications.length > 0) {
+      fetchUserStatuses();
+    }
+  }, [applications]);
 
   if (!user || !['user', 'admin'].includes(user.role ?? '')) {
     navigate('/');
@@ -115,9 +147,14 @@ const EmployerDashboard = () => {
   };
 
   // Gộp ứng viên cho các job của employer
-  const jobApplications = applications.filter(app =>
-    jobs.some(job => String(job.id) === app.jobId)
-  );
+  // Chỉ hiển thị đơn từ user có trạng thái ACTIVE
+  const jobApplications = applications.filter(app => {
+    const isJobMatch = jobs.some(job => String(job.id) === app.jobId);
+    const userStatus = userStatuses[app.userId];
+    // Chỉ hiển thị nếu đã fetch được status và status là ACTIVE
+    const isUserActive = userStatus === 'ACTIVE';
+    return isJobMatch && isUserActive;
+  });
 
   // Badge trạng thái job
   const jobStatusBadge = (status: string) => {
@@ -514,72 +551,82 @@ const EmployerDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                jobApplications.map(app => (
-                  <Card key={app.id}>
-                    <CardContent className="p-6">
-                      <div className="space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold">{app.userName}</h3>
-                            <p className="text-sm text-muted-foreground">{app.userEmail}</p>
-                          </div>
-                          <div className="flex gap-2 items-center">
-                            {appStatusBadge(app.status)}
-                            {app.cvUrl && (
-                              <Button size="sm" variant="outline" asChild>
-                                <a
-                                  href={app.cvUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  Xem CV
-                                </a>
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => navigate(`/profile?id=${encodeURIComponent(app.userId)}`)}
-                              title="Xem hồ sơ"
-                            >
-                              <UserIcon className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {app.coverLetter && (
-                          <p className="text-sm text-muted-foreground">{app.coverLetter}</p>
-                        )}
-
+                <div className="grid md:grid-cols-2 gap-4">
+                  {jobApplications.map(app => (
+                    <Card key={app.id}>
+                      <CardContent className="p-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">
-                            Ứng tuyển: {getJobTitle(app.jobId)} •{' '}
-                            {new Date(app.appliedDate).toLocaleDateString('vi-VN')}
-                          </p>
-
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="bg-success/10 text-success hover:bg-success/20"
-                              onClick={() => approveApplication(app.id)}
-                              disabled={app.status === 'approved'}
-                            >
-                              <Check className="h-4 w-4 mr-1" /> Duyệt
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-destructive/10 text-destructive hover:bg-destructive/20"
-                              onClick={() => rejectApplication(app.id)}
-                              disabled={app.status === 'rejected'}
-                            >
-                              <X className="h-4 w-4 mr-1" /> Từ chối
-                            </Button>
+                          <div className="flex items-center gap-4">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                              app.status === 'approved' ? 'bg-green-50' : 
+                              app.status === 'rejected' ? 'bg-red-50' : 'bg-yellow-50'
+                            }`}>
+                              {app.status === 'approved' ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                              ) : app.status === 'rejected' ? (
+                                <XCircle className="h-5 w-5 text-red-600" />
+                              ) : (
+                                <Clock className="h-5 w-5 text-yellow-600" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-semibold">{app.userName}</div>
+                              <div className="text-sm text-muted-foreground">{app.userEmail}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Ứng tuyển: {getJobTitle(app.jobId)} • {new Date(app.appliedDate).toLocaleDateString('vi-VN')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            {appStatusBadge(app.status)}
+                            <div className="flex gap-2">
+                              {app.cvUrl && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  asChild
+                                  title="Xem CV"
+                                >
+                                  <a href={app.cvUrl} target="_blank" rel="noopener noreferrer">
+                                    <FileText className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => navigate(`/profile?id=${encodeURIComponent(app.userId)}`)}
+                                title="Xem hồ sơ"
+                              >
+                                <UserIcon className="h-4 w-4" />
+                              </Button>
+                              {app.status !== 'approved' && (
+                                <Button
+                                  size="icon"
+                                  style={{ backgroundColor: '#16a34a', color: 'white', borderColor: '#16a34a' }}
+                                  onClick={() => approveApplication(app.id)}
+                                  title="Duyệt"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {app.status !== 'rejected' && (
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  onClick={() => rejectApplication(app.id)}
+                                  title="Từ chối"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </TabsContent>
           </Tabs>

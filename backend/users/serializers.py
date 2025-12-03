@@ -11,17 +11,17 @@ User = get_user_model()
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ['code', 'name', 'description', 'is_active']
+        fields = ['code', 'name', 'description', 'is_active', 'order']
 
 class GenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gender
-        fields = ['code', 'name', 'is_active']
+        fields = ['code', 'name', 'is_active', 'order']
 
 class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Status
-        fields = ['code', 'name', 'description', 'is_active']
+        fields = ['code', 'name', 'description', 'icon', 'color', 'is_active', 'order']
 
 # Profile Serializers
 

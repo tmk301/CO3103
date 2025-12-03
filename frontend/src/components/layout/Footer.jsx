@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Briefcase, Facebook, Linkedin, Twitter } from 'lucide-react';
 
 /** Thay các URL dưới đây bằng link mạng xã hội của bạn */
@@ -9,6 +10,14 @@ const SOCIAL_LINKS = {
 };
 
 const Footer = () => {
+  const { user } = useAuth();
+  
+  const isAdmin = () => {
+    if (!user) return false;
+    const role = (user.role || '').toString().toLowerCase();
+    return role === 'admin';
+  };
+
   return (
     <footer className="border-t bg-muted/50">
       <div className="container mx-auto px-4 py-12">
@@ -103,26 +112,55 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-4">Hỗ trợ</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Về JobFinder
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Liên hệ
-                </Link>
-              </li>
-              <li>
-                <Link to="/policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Điều khoản sử dụng
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Hiển thị cột Admin nếu là admin */}
+          {isAdmin() ? (
+            <div>
+              <h3 className="font-semibold mb-4">Quản trị</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/admin/dashboard" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Bảng điều khiển
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/jobs" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Quản lý tin đăng
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/users" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Quản lý tài khoản
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/lookups" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Quản lý danh mục
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <div>
+              <h3 className="font-semibold mb-4">Hỗ trợ</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Về JobFinder
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Liên hệ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Điều khoản sử dụng
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">

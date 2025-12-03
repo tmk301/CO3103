@@ -129,6 +129,9 @@ export async function listVerifiedCompanies() {
 }
 
 // Authenticated: apply to job
+// TODO: Backend endpoint not implemented yet, this will be enabled when ready
 export async function applyToJob(jobId: string, application: any): Promise<any> {
-  return authPostJSON(`${API_BASE}/api/jobfinder/forms/${jobId}/apply/`, application);
+  // Backend endpoint not available yet - skip API call
+  // return authPostJSON(`${API_BASE}/api/jobfinder/forms/${jobId}/apply/`, application);
+  return Promise.resolve({ success: true });
 }

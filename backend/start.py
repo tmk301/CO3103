@@ -90,6 +90,20 @@ def install_dependencies():
         print("❌ Failed to install dependencies")
         return False
     
+    # Check if PostgreSQL is configured, install driver if needed
+    postgres_req = BASE_DIR / 'requirements-postgres.txt'
+    if postgres_req.exists():
+        # Check DB_ENGINE from .env
+        env_file = BASE_DIR / '.env'
+        if env_file.exists():
+            with open(env_file, 'r') as f:
+                env_content = f.read()
+                if 'DB_ENGINE=postgresql' in env_content.lower().replace(' ', ''):
+                    print("📦 PostgreSQL detected. Installing PostgreSQL driver...")
+                    result = subprocess.run([pip, 'install', '-r', str(postgres_req)])
+                    if result.returncode != 0:
+                        print("⚠️  Failed to install PostgreSQL driver. Make sure PostgreSQL is configured correctly.")
+    
     print("✅ Dependencies installed.")
     return True
 

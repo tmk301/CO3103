@@ -179,7 +179,7 @@ const AdminDashboard = () => {
 
           {/* Quick Actions */}
           <h2 className="text-xl font-semibold mb-4">Truy cập nhanh</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/jobs')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -229,6 +229,20 @@ const AdminDashboard = () => {
                   <div>
                     <h3 className="font-semibold">Xem trang việc làm</h3>
                     <p className="text-sm text-muted-foreground">Xem giao diện người dùng</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/lookups')}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <Briefcase className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Quản lý danh mục</h3>
+                    <p className="text-sm text-muted-foreground">Thêm, sửa, xoá danh mục hệ thống</p>
                   </div>
                 </div>
               </CardContent>

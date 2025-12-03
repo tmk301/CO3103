@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText, Users } from 'lucide-react';
+import { Briefcase, User as UserIcon, LogOut, LayoutDashboard, FileText, Users, Settings } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -89,6 +89,14 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate('/admin/users')}>
                       <Users className="mr-2 h-4 w-4" />
                       Quản lý tài khoản
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* show Quản lý danh mục for admin users */}
+                  {isAdmin() && location.pathname !== '/admin/lookups' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin/lookups')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Quản lý danh mục
                     </DropdownMenuItem>
                   )}
 

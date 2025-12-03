@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from django.db.models import Case, When, Value, IntegerField
 from django.db.models.functions import Cast
+from django.db import transaction
 
 from .models import (
     VerifiedCompany,
@@ -52,61 +53,84 @@ class LookupViewSetMixin:
             return [permissions.AllowAny()]
         return [permissions.IsAdminUser()]
 
+    @action(detail=False, methods=['post'], url_path='update-order')
+    def update_order(self, request):
+        """Bulk update the order of lookup items."""
+        items = request.data.get('items', [])
+        if not items:
+            return Response({'detail': 'No items provided.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        model = self.queryset.model if hasattr(self, 'queryset') else self.get_queryset().model
+        try:
+            with transaction.atomic():
+                for item_data in items:
+                    code = item_data.get('code')
+                    order = item_data.get('order')
+                    if code is not None and order is not None:
+                        model.objects.filter(code=code).update(order=order)
+            return Response({'detail': 'Order updated successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class VerifiedCompanyViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
     serializer_class = VerifiedCompanySerializer
+    lookup_field = 'code'
 
     def get_queryset(self):
-        # Order by name, but 'other' always at the end
+        # Order by order field, then name, but 'other' always at the end
         return VerifiedCompany.objects.annotate(
             is_other=Case(
                 When(code='other', then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('is_other', 'name')
+        ).order_by('is_other', 'order', 'name')
 
 
 class WorkFormatViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
     serializer_class = WorkFormatSerializer
+    lookup_field = 'code'
 
     def get_queryset(self):
-        # Order by name, but 'other' always at the end
+        # Order by order field, then name, but 'other' always at the end
         return WorkFormat.objects.annotate(
             is_other=Case(
                 When(code='other', then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('is_other', 'name')
+        ).order_by('is_other', 'order', 'name')
 
 
 class JobTypeViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobTypeSerializer
+    lookup_field = 'code'
 
     def get_queryset(self):
-        # Order by name, but 'other' always at the end
+        # Order by order field, then name, but 'other' always at the end
         return JobType.objects.annotate(
             is_other=Case(
                 When(code='other', then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('is_other', 'name')
+        ).order_by('is_other', 'order', 'name')
 
 
 class CurrencyViewSet(LookupViewSetMixin, viewsets.ModelViewSet):
     serializer_class = CurrencySerializer
+    lookup_field = 'code'
 
     def get_queryset(self):
-        # Order by name, but 'other' always at the end
+        # Order by order field, then name, but 'other' always at the end
         return Currency.objects.annotate(
             is_other=Case(
                 When(code='other', then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('is_other', 'name')
+        ).order_by('is_other', 'order', 'name')
 
 
 class AdministrativeUnitViewSet(LookupViewSetMixin, viewsets.ReadOnlyModelViewSet):

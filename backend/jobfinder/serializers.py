@@ -21,22 +21,22 @@ User = get_user_model()
 class VerifiedCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = VerifiedCompany
-        fields = ['code', 'name', 'website', 'description', 'is_active']
+        fields = ['code', 'name', 'website', 'description', 'is_active', 'order']
 
 class WorkFormatSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkFormat
-        fields = ['code', 'name', 'description', 'is_active']
+        fields = ['code', 'name', 'description', 'is_active', 'order']
 
 class JobTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobType
-        fields = ['code', 'name', 'description', 'is_active']
+        fields = ['code', 'name', 'description', 'is_active', 'order']
     
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
-        fields = ['code', 'name', 'symbol', 'is_active']
+        fields = ['code', 'name', 'symbol', 'is_active', 'order']
 
 # Location Serializers
 
