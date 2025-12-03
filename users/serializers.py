@@ -128,6 +128,13 @@ class UserSelfUpdateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=15, required=False, allow_blank=True)
     dob = serializers.DateField(required=False, allow_null=True)
     gender = serializers.SlugRelatedField(slug_field='code', queryset=Gender.objects.all(), required=False, allow_null=True)
+    status = serializers.SlugRelatedField(slug_field='code', queryset=Status.objects.all(), required=False, allow_null=True)
+
+    def validate_status(self, value):
+        # User can only set their own status to ACTIVE, INACTIVE, or LOCKED
+        if value and value.code.upper() not in ['ACTIVE', 'INACTIVE', 'LOCKED']:
+            raise serializers.ValidationError("Bạn chỉ có thể đặt trạng thái: Hoạt động, Vô hiệu hoá, hoặc Khoá.")
+        return value
 
     def validate_email(self, value: str):
         user = self.context['request'].user
@@ -137,8 +144,8 @@ class UserSelfUpdateSerializer(serializers.Serializer):
         return value
 
     def update(self, instance, validated_data):
-        # Update User fields
-        user_fields = ['first_name', 'last_name', 'email', 'phone']
+        # Update User fields (including status which is on User model, not Profile)
+        user_fields = ['first_name', 'last_name', 'email', 'phone', 'status']
         user_update_fields = []
         for fld in user_fields:
             if fld in validated_data:
