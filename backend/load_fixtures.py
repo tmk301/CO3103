@@ -4,8 +4,8 @@ Chạy: python load_fixtures.py
 
 Fixtures bao gồm:
 - users_lookups.json: Role, Status, Gender
-- jobfinder_lookups.json: VerifiedCompany, WorkFormat, JobType, Currency, 
-                          AdministrativeUnit, Province, District, Ward
+- jobfinder lookups: VerifiedCompany, WorkFormat, JobType, Currency, 
+                     AdministrativeUnit, Province, District, Ward
 """
 import os
 import sys
@@ -25,19 +25,23 @@ def load_all_fixtures():
     
     fixtures = [
         ('users/fixtures/users_lookups.json', 'Users lookups (Role, Status, Gender)'),
-        ('jobfinder/fixtures/jobfinder_lookups.json', 'Jobfinder lookups (Company, Province, District, Ward, etc.)'),
+        ('jobfinder/fixtures/01_lookups_basic.json', 'Basic lookups (Company, WorkFormat, JobType, Currency, Province)'),
+        ('jobfinder/fixtures/02_lookups_district.json', 'District lookups'),
+        ('jobfinder/fixtures/03_lookups_ward_part1.json', 'Ward lookups (Part 1/3)'),
+        ('jobfinder/fixtures/03_lookups_ward_part2.json', 'Ward lookups (Part 2/3)'),
+        ('jobfinder/fixtures/03_lookups_ward_part3.json', 'Ward lookups (Part 3/3)'),
     ]
     
     for fixture_path, description in fixtures:
         if os.path.exists(fixture_path):
-            print(f"\n→ Loading: {description}")
+            print(f"\n-> Loading: {description}")
             try:
                 call_command('loaddata', fixture_path, verbosity=1)
-                print(f"  ✓ Success!")
+                print(f"  [OK] Success!")
             except Exception as e:
-                print(f"  ✗ Error: {e}")
+                print(f"  [ERROR] {e}")
         else:
-            print(f"\n✗ File not found: {fixture_path}")
+            print(f"\n[SKIP] File not found: {fixture_path}")
     
     print("\n" + "=" * 50)
     print("Done!")
