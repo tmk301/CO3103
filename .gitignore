@@ -67,7 +67,6 @@ ehthumbs.db
 
 # dotenv
 .env
-.env.*
 
 # Virtualenv wrappers
 .python-version
@@ -111,9 +110,5 @@ node_modules/
 # VS Code workspace
 *.code-workspace
 
-# Migrations
-migrations/
-
-# Management
-
-management/
+# Setup marker (local only)
+.setup_complete

@@ -1,43 +1,95 @@
 # Backend - Job Finder API
 
-## Setup
+## Yêu cầu hệ thống
 
-### 1. Tạo virtual environment và cài dependencies
+- Python 3.12+
+- PostgreSQL 14+
+- Tài khoản Cloudinary (miễn phí) - https://cloudinary.com
+
+## Setup nhanh (Khuyến nghị)
+
 ```bash
+# 1. Tạo virtual environment
 python -m venv .venv
 .venv\Scripts\Activate.ps1  # Windows PowerShell
-# hoặc
-source .venv/bin/activate   # Linux/Mac
+# hoặc: source .venv/bin/activate  # Linux/Mac
 
+# 2. Cài dependencies
 pip install -r requirements.txt
+
+# 3. Tạo file .env từ mẫu và điền thông tin
+cp .env.example .env
+
+# 4. Chạy setup tự động (migrate + fixtures + superuser + server)
+python start.py
 ```
 
-### 2. Migrate database
+## Setup chi tiết
+
+### 1. Cài đặt PostgreSQL
+
+**Windows:** Tải từ https://www.postgresql.org/download/windows/
+
+**Mac:** `brew install postgresql && brew services start postgresql`
+
+**Linux:** `sudo apt install postgresql postgresql-contrib`
+
+### 2. Tạo database
+
+```sql
+psql -U postgres
+CREATE DATABASE jobfinder;
+\q
+```
+
+### 3. Cấu hình Cloudinary
+
+1. Đăng ký tại https://cloudinary.com (miễn phí)
+2. Vào Dashboard, copy Cloud name, API Key, API Secret
+
+### 4. Cấu hình .env
+
+```bash
+cp .env.example .env
+```
+
+Điền thông tin vào `.env`:
+```env
+SECRET_KEY=your-random-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+DB_NAME=jobfinder
+DB_USER=postgres
+DB_PASSWORD=your_postgres_password
+DB_HOST=localhost
+DB_PORT=5432
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+### 5. Chạy setup
+
+```bash
+python start.py
+```
+
+Hoặc thủ công:
 ```bash
 python manage.py migrate
-```
-
-### 3. Load lookup data (QUAN TRỌNG)
-Để đảm bảo dữ liệu lookup (Role, Status, Gender, Province, District, Ward, etc.) đồng nhất trên mọi máy:
-
-```bash
 python load_fixtures.py
-```
-
-Hoặc load từng file:
-```bash
-python manage.py loaddata users/fixtures/users_lookups.json
-python manage.py loaddata jobfinder/fixtures/jobfinder_lookups.json
-```
-
-### 4. Tạo superuser (nếu cần)
-```bash
 python manage.py createsuperuser
+python manage.py runserver 8000
 ```
 
-### 5. Chạy server
+## Các lệnh hữu ích
+
 ```bash
-python manage.py runserver
+python start.py           # Chạy server (lần đầu tự động setup)
+python start.py 8080      # Chạy trên port khác
+python start.py --reset   # Reset và setup lại từ đầu
 ```
 
 ## Fixtures
