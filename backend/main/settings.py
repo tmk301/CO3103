@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # REST Framework
+    'rest_framework',
+
     # Project main
     'main', 'jobfinder',
 
