@@ -5,6 +5,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.contrib.auth.models import update_last_login
 from django.utils import timezone
 
+
 @receiver(user_logged_in)
 def handle_user_logged_in(sender, user, request, **kwargs):
     """Ensure user's last_login is updated on successful login.
@@ -23,3 +24,20 @@ def handle_user_logged_in(sender, user, request, **kwargs):
         except Exception:
             # Avoid raising during login; just skip if update fails
             pass
+
+
+@receiver(post_save, sender='users.CustomUser')
+def create_profile_for_user(sender, instance, created, **kwargs):
+    """Automatically create a Profile when a new user is created."""
+    from .models import Profile
+    
+    if created:
+        Profile.objects.get_or_create(user=instance)
+
+
+@receiver(user_logged_in)
+def ensure_profile_exists(sender, user, request, **kwargs):
+    """Ensure profile exists when user logs in (for existing users without profile)."""
+    from .models import Profile
+    
+    Profile.objects.get_or_create(user=user)
