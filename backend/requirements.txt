@@ -9,7 +9,4 @@ python-dotenv==1.2.1
 gunicorn==23.0.0
 whitenoise==6.8.2
 dj-database-url==2.3.0
-
-# PostgreSQL driver (optional - only needed if using PostgreSQL)
-# Uncomment the line below if you're using PostgreSQL:
-# psycopg2-binary==2.9.11
+psycopg2-binary==2.9.11
