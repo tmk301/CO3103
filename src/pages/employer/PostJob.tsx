@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 
 const API_BASE = AUTH_API_BASE;
 
@@ -343,18 +343,21 @@ const PostJob = () => {
                 {/* Verified Company */}
                 <div className="space-y-2">
                   <Label>Công ty / Tổ chức *</Label>
-                  <Select value={formData.verified_company} onValueChange={(v) => handleChange('verified_company', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn công ty" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        {formData.verified_company ? verifiedCompanies.find(c => c.code === formData.verified_company)?.name || 'Chọn công ty' : 'Chọn công ty'}
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
                       {verifiedCompanies.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
+                        <DropdownMenuItem key={c.code} onClick={() => handleChange('verified_company', c.code)}>
                           {c.name}
-                        </SelectItem>
+                        </DropdownMenuItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   {formData.verified_company === 'other' && (
                     <Input
                       className="mt-2"
@@ -417,48 +420,57 @@ const PostJob = () => {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label>Tỉnh / Thành phố *</Label>
-                    <Select value={formData.province} onValueChange={(v) => handleChange('province', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn tỉnh/thành" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {formData.province ? provinces.find(p => p.id === formData.province)?.name || 'Chọn tỉnh/thành' : 'Chọn tỉnh/thành'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
                         {provinces.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
+                          <DropdownMenuItem key={p.id} onClick={() => handleChange('province', p.id)}>
                             {p.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <div className="space-y-2">
                     <Label>Quận / Huyện *</Label>
-                    <Select value={formData.district} onValueChange={(v) => handleChange('district', v)} disabled={!formData.province}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn quận/huyện" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={!formData.province}>
+                        <Button variant="outline" className="w-full justify-between" disabled={!formData.province}>
+                          {formData.district ? districts.find(d => d.id === formData.district)?.name || 'Chọn quận/huyện' : 'Chọn quận/huyện'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
                         {districts.map((d) => (
-                          <SelectItem key={d.id} value={d.id}>
+                          <DropdownMenuItem key={d.id} onClick={() => handleChange('district', d.id)}>
                             {d.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <div className="space-y-2">
                     <Label>Phường / Xã *</Label>
-                    <Select value={formData.ward} onValueChange={(v) => handleChange('ward', v)} disabled={!formData.district}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn phường/xã" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={!formData.district}>
+                        <Button variant="outline" className="w-full justify-between" disabled={!formData.district}>
+                          {formData.ward ? wards.find(w => w.id === formData.ward)?.name || 'Chọn phường/xã' : 'Chọn phường/xã'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
                         {wards.map((w) => (
-                          <SelectItem key={w.id} value={w.id}>
+                          <DropdownMenuItem key={w.id} onClick={() => handleChange('ward', w.id)}>
                             {w.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -499,18 +511,21 @@ const PostJob = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Đơn vị tiền *</Label>
-                    <Select value={formData.salary_currency} onValueChange={(v) => handleChange('salary_currency', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn đơn vị tiền" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {formData.salary_currency ? currencies.find(c => c.code === formData.salary_currency)?.name || 'Chọn đơn vị tiền' : 'Chọn đơn vị tiền'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                         {currencies.map((c) => (
-                          <SelectItem key={c.code} value={c.code}>
+                          <DropdownMenuItem key={c.code} onClick={() => handleChange('salary_currency', c.code)}>
                             {c.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {formData.salary_currency === 'other' && (
                       <Input
                         className="mt-2"
@@ -552,18 +567,21 @@ const PostJob = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Hình thức làm việc *</Label>
-                    <Select value={formData.work_format} onValueChange={(v) => handleChange('work_format', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn hình thức" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {formData.work_format ? workFormats.find(w => w.code === formData.work_format)?.name || 'Chọn hình thức' : 'Chọn hình thức'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                         {workFormats.map((w) => (
-                          <SelectItem key={w.code} value={w.code}>
+                          <DropdownMenuItem key={w.code} onClick={() => handleChange('work_format', w.code)}>
                             {w.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {formData.work_format === 'other' && (
                       <Input
                         className="mt-2"
@@ -576,18 +594,21 @@ const PostJob = () => {
 
                   <div className="space-y-2">
                     <Label>Loại công việc *</Label>
-                    <Select value={formData.job_type} onValueChange={(v) => handleChange('job_type', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại công việc" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {formData.job_type ? jobTypes.find(j => j.code === formData.job_type)?.name || 'Chọn loại công việc' : 'Chọn loại công việc'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                         {jobTypes.map((j) => (
-                          <SelectItem key={j.code} value={j.code}>
+                          <DropdownMenuItem key={j.code} onClick={() => handleChange('job_type', j.code)}>
                             {j.name}
-                          </SelectItem>
+                          </DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {formData.job_type === 'other' && (
                       <Input
                         className="mt-2"

@@ -4,7 +4,14 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const Dialog = DialogPrimitive.Root;
+// Custom Dialog that prevents layout shift by disabling scroll lock
+const Dialog = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
+>(({ modal = false, ...props }, ref) => (
+  <DialogPrimitive.Root modal={modal} {...props} />
+));
+Dialog.displayName = "Dialog";
 
 const DialogTrigger = DialogPrimitive.Trigger;
 

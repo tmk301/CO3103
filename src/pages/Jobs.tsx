@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Search, SlidersHorizontal, MapPin, DollarSign, Clock, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -386,47 +386,56 @@ const Jobs = () => {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Tỉnh/Thành phố</label>
-                <Select value={province} onValueChange={setProvince}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {province === 'all' ? 'Tất cả' : provinces.find(p => p.id === province)?.name || 'Tất cả'}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
+                    <DropdownMenuItem onClick={() => setProvince('all')}>Tất cả</DropdownMenuItem>
                     {provinces.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      <DropdownMenuItem key={p.id} onClick={() => setProvince(p.id)}>{p.name}</DropdownMenuItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Hình thức làm việc</label>
-                <Select value={workFormat} onValueChange={setWorkFormat}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {workFormat === 'all' ? 'Tất cả' : workFormats.find(wf => wf.code === workFormat)?.name || 'Tất cả'}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                    <DropdownMenuItem onClick={() => setWorkFormat('all')}>Tất cả</DropdownMenuItem>
                     {workFormats.map(wf => (
-                      <SelectItem key={wf.code} value={wf.code}>{wf.name}</SelectItem>
+                      <DropdownMenuItem key={wf.code} onClick={() => setWorkFormat(wf.code)}>{wf.name}</DropdownMenuItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Loại công việc</label>
-                <Select value={jobType} onValueChange={setJobType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {jobType === 'all' ? 'Tất cả' : jobTypes.find(jt => jt.code === jobType)?.name || 'Tất cả'}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                    <DropdownMenuItem onClick={() => setJobType('all')}>Tất cả</DropdownMenuItem>
                     {jobTypes.map(jt => (
-                      <SelectItem key={jt.code} value={jt.code}>{jt.name}</SelectItem>
+                      <DropdownMenuItem key={jt.code} onClick={() => setJobType(jt.code)}>{jt.name}</DropdownMenuItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -446,47 +455,56 @@ const Jobs = () => {
                   {/* Location filters */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Quận/Huyện</label>
-                    <Select value={district} onValueChange={setDistrict} disabled={province === 'all'}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={province === 'all' ? 'Chọn tỉnh trước' : 'Tất cả'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={province === 'all'}>
+                        <Button variant="outline" className="w-full justify-between" disabled={province === 'all'}>
+                          {province === 'all' ? 'Chọn tỉnh trước' : (district === 'all' ? 'Tất cả' : districts.find(d => d.id === district)?.name || 'Tất cả')}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
+                        <DropdownMenuItem onClick={() => setDistrict('all')}>Tất cả</DropdownMenuItem>
                         {districts.map(d => (
-                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                          <DropdownMenuItem key={d.id} onClick={() => setDistrict(d.id)}>{d.name}</DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">Phường/Xã</label>
-                    <Select value={ward} onValueChange={setWard} disabled={district === 'all'}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={district === 'all' ? 'Chọn quận/huyện trước' : 'Tất cả'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={district === 'all'}>
+                        <Button variant="outline" className="w-full justify-between" disabled={district === 'all'}>
+                          {district === 'all' ? 'Chọn quận/huyện trước' : (ward === 'all' ? 'Tất cả' : wards.find(w => w.id === ward)?.name || 'Tất cả')}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
+                        <DropdownMenuItem onClick={() => setWard('all')}>Tất cả</DropdownMenuItem>
                         {wards.map(w => (
-                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                          <DropdownMenuItem key={w.id} onClick={() => setWard(w.id)}>{w.name}</DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">Công ty</label>
-                    <Select value={company} onValueChange={setCompany}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {company === 'all' ? 'Tất cả' : companies.find(c => c.code === company)?.name || 'Tất cả'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] max-h-60 overflow-y-auto">
+                        <DropdownMenuItem onClick={() => setCompany('all')}>Tất cả</DropdownMenuItem>
                         {companies.map(c => (
-                          <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                          <DropdownMenuItem key={c.code} onClick={() => setCompany(c.code)}>{c.name}</DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div>
@@ -523,17 +541,20 @@ const Jobs = () => {
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">Đơn vị tiền tệ</label>
-                    <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          {currency === 'all' ? 'Tất cả' : currencies.find(c => c.code === currency)?.name || 'Tất cả'}
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                        <DropdownMenuItem onClick={() => setCurrency('all')}>Tất cả</DropdownMenuItem>
                         {currencies.map(c => (
-                          <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                          <DropdownMenuItem key={c.code} onClick={() => setCurrency(c.code)}>{c.name}</DropdownMenuItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CollapsibleContent>

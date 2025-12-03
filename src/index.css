@@ -107,8 +107,32 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  /* 
+   * Fix layout shift when Radix modal opens (dialog, dropdown, etc.)
+   * Radix uses RemoveScroll which adds padding-right to compensate for scrollbar
+   * We disable this behavior by using scrollbar-gutter and forcing no compensation
+   */
   html {
     scrollbar-gutter: stable;
+    overflow-y: scroll; /* Always show scrollbar track */
+  }
+
+  /* 
+   * Override Radix RemoveScroll padding compensation
+   * RemoveScroll adds inline styles to body, html, and [data-radix-scroll-lock-wrapper]
+   */
+  body, 
+  html,
+  body[data-scroll-locked],
+  [data-radix-scroll-lock-wrapper] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Also target the style attribute directly */
+  body[style*="padding-right"],
+  html[style*="padding-right"] {
+    padding-right: 0 !important;
   }
 
   body {

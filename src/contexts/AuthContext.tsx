@@ -13,6 +13,8 @@ export interface User {
   avatar?: string;
   company?: string;
   cvUrl?: string;
+  cv?: string;  // Cloudinary URL for CV
+  cv_filename?: string;  // Original filename
   phone?: string;
   gender?: string; // backend uses gender codes (e.g. 'MALE', 'FEMALE')
   dob?: string; // "YYYY-MM-DD"
@@ -42,6 +44,7 @@ interface AuthContextType {
   updateProfile: (data: Partial<User>) => Promise<boolean>;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -201,12 +204,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profile) {
           me.dob = profile.dob ?? me.dob;
           me.gender = profile.gender ?? me.gender;
+          me.cv = profile.cv ?? me.cv;
+          me.cv_filename = profile.cv_filename ?? me.cv_filename;
         }
       } catch (e) {
         // profile may not exist yet
       }
       const fullName = [me.first_name, me.last_name].filter(Boolean).join(' ').trim();
-      const avatar = me.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(me.email || me.username || String(me.id))}`;
       const u: User = {
         id: String(me.id),
         email: me.email,
@@ -215,11 +219,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         last_name: me.last_name,
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
         name: fullName || undefined,
-        avatar,
+        avatar: me.avatar || undefined,
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
         status: me.status?.toUpperCase(),
+        cv: me.cv || undefined,
+        cv_filename: me.cv_filename || undefined,
       };
       saveUserAndTokens(u, { access, refresh });
       return { success: true };
@@ -282,12 +288,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profile) {
           me.dob = profile.dob ?? me.dob;
           me.gender = profile.gender ?? me.gender;
+          me.cv = profile.cv ?? me.cv;
+          me.cv_filename = profile.cv_filename ?? me.cv_filename;
         }
       } catch (e) {
         // ignore
       }
       const fullNameR = [me.first_name, me.last_name].filter(Boolean).join(' ').trim();
-      const avatarR = me.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(me.email || me.username || String(me.id))}`;
       const u: User = {
         id: String(me.id),
         email: me.email,
@@ -296,11 +303,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         last_name: me.last_name,
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
         name: fullNameR || undefined,
-        avatar: avatarR,
+        avatar: me.avatar || undefined,
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
         status: me.status?.toUpperCase(),
+        cv: me.cv || undefined,
+        cv_filename: me.cv_filename || undefined,
       };
 
       saveUserAndTokens(u, { access, refresh });
@@ -377,12 +386,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profile) {
           me.dob = profile.dob ?? me.dob;
           me.gender = profile.gender ?? me.gender;
+          me.cv = profile.cv ?? me.cv;
+          me.cv_filename = profile.cv_filename ?? me.cv_filename;
         }
       } catch (e) {
         // ignore
       }
       const fullNameU = [me.first_name, me.last_name].filter(Boolean).join(' ').trim();
-      const avatarU = me.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(me.email || me.username || String(me.id))}`;
       const u: User = {
         id: String(me.id),
         email: me.email,
@@ -391,11 +401,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         last_name: me.last_name,
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
         name: fullNameU || undefined,
-        avatar: avatarU,
+        avatar: me.avatar || undefined,
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
         status: me.status?.toUpperCase(),
+        cv: me.cv || undefined,
+        cv_filename: me.cv_filename || undefined,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       setUser(u);
@@ -417,12 +429,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profile) {
           me.dob = profile.dob ?? me.dob;
           me.gender = profile.gender ?? me.gender;
+          me.cv = profile.cv ?? me.cv;
+          me.cv_filename = profile.cv_filename ?? me.cv_filename;
         }
       } catch (e) {
         // ignore
       }
       const fullNameR = [me.first_name, me.last_name].filter(Boolean).join(' ').trim();
-      const avatarR = me.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(me.email || me.username || String(me.id))}`;
       const u: User = {
         id: String(me.id),
         email: me.email,
@@ -431,11 +444,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         last_name: me.last_name,
         role: me.role ? String(me.role).toLowerCase() as any : undefined,
         name: fullNameR || undefined,
-        avatar: avatarR,
+        avatar: me.avatar || undefined,
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
         status: me.status?.toUpperCase(),
+        cv: me.cv || undefined,
+        cv_filename: me.cv_filename || undefined,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       setUser(u);
@@ -460,6 +475,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updateProfile,
         refreshUser,
         isAuthenticated: !!user,
+        isLoading: false,
       }}
     >
       {children}

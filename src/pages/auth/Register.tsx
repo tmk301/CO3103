@@ -4,9 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Briefcase, Eye, EyeOff } from 'lucide-react';
+import { Briefcase, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
@@ -231,79 +231,79 @@ const Register = () => {
                 <Label>Ngày sinh</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {/* Ngày */}
-                  <Select
-                    value={formData.dobDay === '' ? '' : String(formData.dobDay)}
-                    onValueChange={(v) => setFormData({ ...formData, dobDay: v ? Number(v) : '' })}
-                  >
-                    <SelectTrigger className="min-w-0">
-                      <SelectValue placeholder="Ngày" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between min-w-0">
+                        {formData.dobDay || 'Ngày'}
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-20 max-h-60 overflow-y-auto">
                       {(() => {
                         const year = Number(formData.dobYear) || MAX_YEAR;
                         const month = Number(formData.dobMonth) || 1;
                         const total = getDaysInMonth(month, year);
                         return Array.from({ length: total }, (_, i) => i + 1).map((d) => (
-                          <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                          <DropdownMenuItem key={d} onClick={() => setFormData({ ...formData, dobDay: d })}>{d}</DropdownMenuItem>
                         ));
                       })()}
-                    </SelectContent>
-                  </Select>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Tháng */}
-                  <Select
-                    value={formData.dobMonth === '' ? '' : String(formData.dobMonth)}
-                    onValueChange={(v) => setFormData({ ...formData, dobMonth: v ? Number(v) : '' })}
-                  >
-                    <SelectTrigger className="min-w-0">
-                      <SelectValue placeholder="Tháng" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between min-w-0">
+                        {formData.dobMonth || 'Tháng'}
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-20 max-h-60 overflow-y-auto">
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                        <SelectItem key={m} value={String(m)}>{m}</SelectItem>
+                        <DropdownMenuItem key={m} onClick={() => setFormData({ ...formData, dobMonth: m })}>{m}</DropdownMenuItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Năm */}
-                  <Select
-                    value={formData.dobYear === '' ? '' : String(formData.dobYear)}
-                    onValueChange={(v) => setFormData({ ...formData, dobYear: v ? Number(v) : '' })}
-                  >
-                    <SelectTrigger className="min-w-0">
-                      <SelectValue placeholder="Năm" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between min-w-0">
+                        {formData.dobYear || 'Năm'}
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-24 max-h-60 overflow-y-auto">
                       {Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => MAX_YEAR - i).map((y) => (
-                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        <DropdownMenuItem key={y} onClick={() => setFormData({ ...formData, dobYear: y })}>{y}</DropdownMenuItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
               {/* Giới tính (phải) – hẹp lại */}
               <div className="space-y-2 md:col-span-3 md:max-w-[220px] md:ml-auto">
                 <Label>Giới tính</Label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(v) => setFormData({ ...formData, gender: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn" />
-                  </SelectTrigger>
-                  <SelectContent>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {formData.gender ? (genders.find(g => g.code === formData.gender)?.name || (formData.gender === 'MALE' ? 'Nam' : formData.gender === 'FEMALE' ? 'Nữ' : 'Chọn')) : 'Chọn'}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-32">
                     {genders.length > 0 ? (
-                      genders.map((g) => <SelectItem key={g.code} value={g.code}>{g.name}</SelectItem>)
+                      genders.map((g) => <DropdownMenuItem key={g.code} onClick={() => setFormData({ ...formData, gender: g.code })}>{g.name}</DropdownMenuItem>)
                     ) : (
                       // fallback options
                       <>
-                        <SelectItem value="MALE">Nam</SelectItem>
-                        <SelectItem value="FEMALE">Nữ</SelectItem>
+                        <DropdownMenuItem onClick={() => setFormData({ ...formData, gender: 'MALE' })}>Nam</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setFormData({ ...formData, gender: 'FEMALE' })}>Nữ</DropdownMenuItem>
                       </>
                     )}
-                  </SelectContent>
-                </Select>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 

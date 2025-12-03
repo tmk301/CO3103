@@ -10,11 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import {
   MapPin, DollarSign, Briefcase, Clock, Building2,
-  CheckCircle2, ArrowLeft
+  CheckCircle2, ArrowLeft, FileText, Upload, Loader2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 interface JobForm {
@@ -57,7 +58,9 @@ const JobDetail = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [coverLetter, setCoverLetter] = useState('');
+  const [useDefaultCV, setUseDefaultCV] = useState(true);
+  const [customCV, setCustomCV] = useState<File | null>(null);
+  const [uploadingCV, setUploadingCV] = useState(false);
   const [job, setJob] = useState<JobForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,25 +185,67 @@ const JobDetail = () => {
     setShowApplyDialog(true);
   };
 
-  const submitApplication = () => {
+  const submitApplication = async () => {
     if (!user || !job) return;
 
-    applyToJob(String(job.id), {
-      jobId: String(job.id),
-      userId: user.id,
-      userName: user.name || user.username || '',
-      userEmail: user.email,
-      cvUrl: user.cvUrl,
-      coverLetter,
-    });
+    setUploadingCV(true);
+    try {
+      // Determine which CV to use
+      let cvUrl = user.cv;
+      
+      // If using custom CV, upload it first
+      if (!useDefaultCV && customCV) {
+        const token = await getAccessToken();
+        const formData = new FormData();
+        formData.append('cv', customCV);
 
-    toast({
-      title: "Ứng tuyển thành công!",
-      description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
-    });
+        const uploadRes = await fetch(`${API_BASE}/api/users/cv/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
 
-    setShowApplyDialog(false);
-    setCoverLetter('');
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
+          cvUrl = data.cv;
+        } else {
+          const errData = await uploadRes.json();
+          toast({
+            title: 'Lỗi',
+            description: errData.detail || 'Không thể tải lên CV',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
+      applyToJob(String(job.id), {
+        jobId: String(job.id),
+        userId: user.id,
+        userName: user.name || user.username || '',
+        userEmail: user.email,
+        cvUrl: cvUrl,
+      });
+
+      toast({
+        title: "Ứng tuyển thành công!",
+        description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
+      });
+
+      setShowApplyDialog(false);
+      setCustomCV(null);
+      setUseDefaultCV(true);
+    } catch (err) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể gửi đơn ứng tuyển',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingCV(false);
+    }
   };
 
   const companyName = getCompanyName();
@@ -389,28 +434,126 @@ const JobDetail = () => {
       </main>
 
       {/* Apply Dialog */}
-      <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+      <Dialog open={showApplyDialog} onOpenChange={(open) => {
+        setShowApplyDialog(open);
+        if (!open) {
+          setUseDefaultCV(!!user?.cv);
+          setCustomCV(null);
+        } else {
+          // When opening, auto-select custom CV mode if no default CV
+          setUseDefaultCV(!!user?.cv);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ứng tuyển vào vị trí {job.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Thư xin việc</label>
-              <Textarea
-                placeholder="Giới thiệu bản thân và lý do bạn phù hợp với vị trí này..."
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                rows={6}
-                className="mt-2"
-              />
+            {/* CV Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Chọn CV để ứng tuyển</Label>
+              
+              {/* Only show default CV option if user has one */}
+              {user?.cv && (
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">Sử dụng CV mặc định</p>
+                      <p className="text-xs text-muted-foreground">{user?.cv_filename}</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={useDefaultCV}
+                    onCheckedChange={(checked) => {
+                      setUseDefaultCV(checked);
+                      if (checked) setCustomCV(null);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Show upload area if no default CV or user chose custom */}
+              {(!user?.cv || !useDefaultCV) && (
+                <div className="p-3 border rounded-lg border-dashed">
+                  <input
+                    type="file"
+                    id="custom-cv-upload"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Validate
+                        const allowedExtensions = ['.pdf', '.doc', '.docx'];
+                        const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+                        if (!allowedExtensions.includes(fileExt)) {
+                          toast({
+                            title: 'Lỗi',
+                            description: 'Chỉ chấp nhận file PDF, DOC, DOCX',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        if (file.size > 10 * 1024 * 1024) {
+                          toast({
+                            title: 'Lỗi',
+                            description: 'File quá lớn. Tối đa 10MB.',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        setCustomCV(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {customCV ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-green-600" />
+                        <span className="text-sm truncate max-w-[200px]">{customCV.name}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCustomCV(null)}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="custom-cv-upload"
+                      className="flex flex-col items-center gap-2 cursor-pointer py-4"
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {user?.cv ? 'Tải lên CV khác cho công việc này' : 'Tải lên CV để ứng tuyển'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        PDF, DOC, DOCX (Tối đa 10MB)
+                      </span>
+                    </label>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              CV của bạn sẽ được tự động đính kèm từ hồ sơ.
-            </div>
+
             <div className="flex gap-2">
-              <Button onClick={submitApplication} className="flex-1">
-                Gửi ứng tuyển
+              <Button 
+                onClick={submitApplication} 
+                className="flex-1"
+                disabled={uploadingCV || (useDefaultCV && !user?.cv) || (!useDefaultCV && !customCV)}
+              >
+                {uploadingCV ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Đang gửi...
+                  </>
+                ) : (
+                  'Gửi ứng tuyển'
+                )}
               </Button>
               <Button variant="outline" onClick={() => setShowApplyDialog(false)}>
                 Hủy

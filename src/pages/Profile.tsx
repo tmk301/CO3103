@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, FileText, Briefcase, Pencil, Save, CalendarIcon, ArrowLeft, CheckCircle, ShieldX, Lock, ChevronDown } from 'lucide-react';
+import { User, FileText, Briefcase, Pencil, Save, CalendarIcon, ArrowLeft, CheckCircle, ShieldX, Lock, ChevronDown, Camera, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +31,7 @@ interface Gender {
 }
 
 const Profile = () => {
-  const { user, updateProfile, refreshUser } = useAuth();
+  const { user, updateProfile, refreshUser, isLoading } = useAuth();
 
   const [search] = useSearchParams();
   // avoid accessing user.id when user may be null during initial render
@@ -54,6 +54,8 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [genders, setGenders] = useState<Gender[]>([]);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCV, setUploadingCV] = useState(false);
   
   // Form fields
   const [firstName, setFirstName] = useState('');
@@ -88,6 +90,7 @@ const Profile = () => {
             gender: data.gender,
             dob: data.dob,
             status: data.status,
+            avatar: data.avatar,
           });
         } else {
           toast({ title: 'Lỗi', description: 'Không thể tải thông tin người dùng', variant: 'destructive' });
@@ -190,6 +193,73 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Lỗi',
+        description: 'Chỉ chấp nhận file ảnh (JPEG, PNG, GIF, WebP)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Lỗi',
+        description: 'File quá lớn. Tối đa 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const token = await getAccessToken();
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await fetch(`${API_BASE}/api/users/avatar/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        toast({
+          title: 'Thành công',
+          description: 'Đã cập nhật ảnh đại diện',
+        });
+        // Refresh user data
+        await refreshUser();
+      } else {
+        const data = await res.json();
+        toast({
+          title: 'Lỗi',
+          description: data.detail || 'Không thể tải ảnh lên',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể tải ảnh lên',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAvatar(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
   const handleCancel = () => {
     // Reset form to original values
     if (displayUser) {
@@ -203,6 +273,104 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!allowedExtensions.includes(fileExt)) {
+      toast({
+        title: 'Lỗi',
+        description: 'Chỉ chấp nhận file PDF, DOC, DOCX',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Lỗi',
+        description: 'File quá lớn. Tối đa 10MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingCV(true);
+    try {
+      const token = await getAccessToken();
+      const formData = new FormData();
+      formData.append('cv', file);
+
+      const res = await fetch(`${API_BASE}/api/users/cv/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        toast({
+          title: 'Thành công',
+          description: 'Đã tải lên CV',
+        });
+        await refreshUser();
+      } else {
+        const data = await res.json();
+        toast({
+          title: 'Lỗi',
+          description: data.detail || 'Không thể tải CV lên',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể tải CV lên',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingCV(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteCV = async () => {
+    try {
+      const token = await getAccessToken();
+      const res = await fetch(`${API_BASE}/api/users/cv/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        toast({
+          title: 'Thành công',
+          description: 'Đã xóa CV',
+        });
+        await refreshUser();
+      } else {
+        const data = await res.json();
+        toast({
+          title: 'Lỗi',
+          description: data.detail || 'Không thể xóa CV',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể xóa CV',
+        variant: 'destructive',
+      });
+    }
+  };
 
 
   const getJobTitle = (jobId: string) => {
@@ -256,8 +424,23 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    if (!user) navigate('/login');
-  }, [user, navigate]);
+    // Chỉ redirect khi đã load xong và chắc chắn không có user
+    if (!isLoading && !user) navigate('/auth/login');
+  }, [user, isLoading, navigate]);
+
+  // Đang load auth state - hiển thị loading
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <div className="h-16" />
+        <main className="flex-1 py-8">
+          <div className="container mx-auto px-4 text-center">Đang tải...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!user) return null; // tránh render khi đang redirect
 
@@ -330,15 +513,36 @@ const Profile = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-6">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={displayUser?.avatar} alt={displayUser?.name || displayUser?.email} />
-                      <AvatarFallback className="text-2xl">
-                        {(() => {
-                          const name = displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email || '';
-                          return name ? name.charAt(0) : '';
-                        })()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative group">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={displayUser?.avatar} alt={displayUser?.name || displayUser?.email} />
+                        <AvatarFallback className="text-2xl">
+                          {(displayUser?.first_name?.charAt(0) || displayUser?.name?.charAt(0) || displayUser?.email?.charAt(0) || '').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isSelf && (
+                        <>
+                          <input
+                            type="file"
+                            id="avatar-upload"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            disabled={uploadingAvatar}
+                          />
+                          <label
+                            htmlFor="avatar-upload"
+                            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          >
+                            {uploadingAvatar ? (
+                              <Loader2 className="h-6 w-6 text-white animate-spin" />
+                            ) : (
+                              <Camera className="h-6 w-6 text-white" />
+                            )}
+                          </label>
+                        </>
+                      )}
+                    </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-xl font-semibold">{displayUser?.name || [displayUser?.first_name, displayUser?.last_name].filter(Boolean).join(' ').trim() || displayUser?.email}</h3>
@@ -374,7 +578,7 @@ const Profile = () => {
                               <ChevronDown className="h-4 w-4 opacity-50" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-[200px]">
+                          <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                             {status !== 'ACTIVE' && (
                               <DropdownMenuItem onClick={() => setStatus('ACTIVE')}>
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Hoạt động
@@ -493,7 +697,7 @@ const Profile = () => {
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-[200px]">
+                            <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
                               {genders.map(g => (
                                 <DropdownMenuItem key={g.code} onClick={() => setGender(g.code)}>
                                   {g.name === 'Male' ? 'Nam' : g.name === 'Female' ? 'Nữ' : g.name === 'Other' ? 'Khác' : g.name}
@@ -544,6 +748,73 @@ const Profile = () => {
                         />
                       </div>
                     </div>
+
+                    {/* CV - chỉ hiển thị cho role user */}
+                    {displayUser?.role === 'user' && (
+                      <div className="grid gap-2">
+                        <Label>CV / Hồ sơ xin việc</Label>
+                        <div className="flex items-center gap-4">
+                          {displayUser?.cv ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <FileText className="h-5 w-5 text-blue-600" />
+                              <a 
+                                href={displayUser.cv} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline truncate flex-1"
+                              >
+                                {displayUser.cv_filename || 'CV đã tải lên'}
+                              </a>
+                              {isSelf && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={handleDeleteCV}
+                                >
+                                  Xóa
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Chưa tải lên CV</span>
+                          )}
+                          {isSelf && (
+                            <div>
+                              <input
+                                type="file"
+                                id="cv-upload"
+                                accept=".pdf,.doc,.docx"
+                                onChange={handleCVUpload}
+                                className="hidden"
+                                disabled={uploadingCV}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById('cv-upload')?.click()}
+                                disabled={uploadingCV}
+                              >
+                                {uploadingCV ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Đang tải...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    {displayUser?.cv ? 'Thay đổi CV' : 'Tải lên CV'}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Chấp nhận: PDF, DOC, DOCX (Tối đa 10MB)</p>
+                      </div>
+                    )}
 
                     {/* Nút chỉnh sửa / lưu */}
                     {isSelf && (
