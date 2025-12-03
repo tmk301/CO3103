@@ -1,0 +1,109 @@
+[
+  {
+    "model": "users.role",
+    "pk": 1,
+    "fields": {
+      "code": "USER",
+      "name": "User",
+      "description": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.role",
+    "pk": 2,
+    "fields": {
+      "code": "ADMIN",
+      "name": "Admin",
+      "description": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 1,
+    "fields": {
+      "code": "ACTIVE",
+      "name": "Active",
+      "description": "Account is active.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 2,
+    "fields": {
+      "code": "INACTIVE",
+      "name": "Inactive",
+      "description": "Account is inactive.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 3,
+    "fields": {
+      "code": "PENDING_VERIFICATION",
+      "name": "Pending Verification",
+      "description": "Account not verified (email/phone);",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 4,
+    "fields": {
+      "code": "LOCKED",
+      "name": "Locked",
+      "description": "Temporarily locked (too many failed logins).",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 5,
+    "fields": {
+      "code": "SUSPENDED",
+      "name": "Suspended",
+      "description": "Temporarily disabled.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.status",
+    "pk": 6,
+    "fields": {
+      "code": "BANNED",
+      "name": "Banned",
+      "description": "Permanently prohibited.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.gender",
+    "pk": 3,
+    "fields": {
+      "code": "MALE",
+      "name": "Male",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.gender",
+    "pk": 4,
+    "fields": {
+      "code": "FEMALE",
+      "name": "Female",
+      "is_active": true
+    }
+  },
+  {
+    "model": "users.gender",
+    "pk": 5,
+    "fields": {
+      "code": "OTHER",
+      "name": "Other",
+      "is_active": true
+    }
+  }
+]

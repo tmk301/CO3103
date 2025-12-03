@@ -1,44 +1,83 @@
-# CO3103 — Frontend
+# JobFinder - Job Search Platform
 
-This folder contains the frontend for the CO3103 project (Vite + React).
+A full-stack job search platform built with Django (Backend) and React + Vite (Frontend).
 
-## Prerequisites
+## Project Structure
 
-- Node.js 16+ (or the version specified in the repo)
-- npm or pnpm
+\\\
+/
+├── backend/          # Django REST API
+│   ├── main/         # Django settings
+│   ├── users/        # User management
+│   ├── jobfinder/    # Job listings
+│   └── start.py      # All-in-one startup script
+│
+└── frontend/         # React + Vite + TypeScript
+    ├── src/
+    │   ├── components/
+    │   ├── pages/
+    │   ├── contexts/
+    │   └── lib/
+    └── package.json
+\\\
 
-## Setup
+## Quick Start
 
-Install dependencies:
+### Backend
 
-```powershell
-npm install
-# or with pnpm:
-# pnpm install
-```
+\\\ash
+cd backend
+python start.py
+\\\
 
-## Run (development)
+This will automatically:
+- Create virtual environment
+- Install dependencies  
+- Run migrations
+- Load fixtures
+- Create superuser
+- Start server at http://localhost:8000
 
-Start the dev server:
+### Frontend
 
-```powershell
-npm run dev
-# or with pnpm:
-# pnpm dev
-```
+\\\ash
+cd frontend
+npm install   # or: bun install
+npm run dev   # or: bun dev
+\\\
 
-Open the URL shown in the terminal (usually http://localhost:5173).
+Frontend runs at http://localhost:5173
 
-## Build (production)
+## Requirements
 
-```powershell
-npm run dev
-# or
-# npm run build
-```
+- Python 3.12+
+- Node.js 18+ (or Bun)
+- PostgreSQL 14+
+- Cloudinary account (free)
 
-Serve the production build locally (optional):
+## Configuration
 
-```powershell
-npm run preview
-```
+1. Copy \.env.example\ to \.env\ in backend folder
+2. Fill in your database and Cloudinary credentials
+
+## Tech Stack
+
+### Backend
+- Django 5.2
+- Django REST Framework
+- PostgreSQL
+- JWT Authentication
+- Cloudinary (media storage)
+
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- TailwindCSS
+- Shadcn/ui
+- React Router
+
+## API Documentation
+
+- API Base: http://localhost:8000/api/
+- Admin Panel: http://localhost:8000/admin/
