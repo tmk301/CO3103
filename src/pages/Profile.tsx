@@ -12,8 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, FileText, Briefcase, Pencil, Save, CalendarIcon, ArrowLeft } from 'lucide-react';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { User, FileText, Briefcase, Pencil, Save, CalendarIcon, ArrowLeft, CheckCircle, ShieldX, Lock, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, parse } from 'date-fns';
@@ -56,6 +61,7 @@ const Profile = () => {
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
+  const [status, setStatus] = useState('');
 
   // Fetch user data when viewing someone else's profile
   useEffect(() => {
@@ -112,6 +118,7 @@ const Profile = () => {
       setPhone(displayUser.phone || '');
       setDob(displayUser.dob || '');
       setGender(displayUser.gender || '');
+      setStatus(displayUser.status?.toUpperCase() || '');
     }
   }, [displayUser?.id]);
 
@@ -138,19 +145,26 @@ const Profile = () => {
     setSaving(true);
     try {
       const token = await getAccessToken();
+      
+      // Build request body, only include status if it has a value
+      const requestBody: any = {
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone,
+        dob: dob || null,
+        gender: gender || null,
+      };
+      if (status) {
+        requestBody.status = status;
+      }
+      
       const res = await fetch(`${API_BASE}/api/users/me/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone,
-          dob: dob || null,
-          gender: gender || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       if (res.ok) {
@@ -184,6 +198,7 @@ const Profile = () => {
       setPhone(displayUser.phone || '');
       setDob(displayUser.dob || '');
       setGender(displayUser.gender || '');
+      setStatus(displayUser.status?.toUpperCase() || '');
     }
     setIsEditing(false);
   };
@@ -226,8 +241,8 @@ const Profile = () => {
       'BANNED': 'bg-red-200 text-red-800',
     };
     const labels: Record<string, string> = {
-      'ACTIVE': 'Đang hoạt động',
-      'INACTIVE': 'Không hoạt động',
+      'ACTIVE': 'Hoạt động',
+      'INACTIVE': 'Vô hiệu hoá',
       'PENDING_VERIFICATION': 'Chờ xác minh',
       'LOCKED': 'Đã khoá',
       'SUSPENDED': 'Tạm ngưng',
@@ -346,9 +361,42 @@ const Profile = () => {
                     {/* Trạng thái tài khoản */}
                     <div className="grid gap-2">
                       <Label>Trạng thái tài khoản</Label>
-                      <div>
-                        {getAccountStatusBadge(displayUser?.status || '')}
-                      </div>
+                      {isEditing && isSelf ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-[200px] justify-between">
+                              <span className="flex items-center gap-2">
+                                {status === 'ACTIVE' && <><CheckCircle className="h-4 w-4 text-green-600" /> Hoạt động</>}
+                                {status === 'INACTIVE' && <><ShieldX className="h-4 w-4 text-gray-600" /> Vô hiệu hoá</>}
+                                {status === 'LOCKED' && <><Lock className="h-4 w-4 text-orange-600" /> Khoá tài khoản</>}
+                                {!status && 'Chọn trạng thái'}
+                              </span>
+                              <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-[200px]">
+                            {status !== 'ACTIVE' && (
+                              <DropdownMenuItem onClick={() => setStatus('ACTIVE')}>
+                                <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Hoạt động
+                              </DropdownMenuItem>
+                            )}
+                            {status !== 'INACTIVE' && (
+                              <DropdownMenuItem onClick={() => setStatus('INACTIVE')}>
+                                <ShieldX className="h-4 w-4 mr-2 text-gray-600" /> Vô hiệu hoá
+                              </DropdownMenuItem>
+                            )}
+                            {status !== 'LOCKED' && (
+                              <DropdownMenuItem onClick={() => setStatus('LOCKED')}>
+                                <Lock className="h-4 w-4 mr-2 text-orange-600" /> Khoá tài khoản
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <div>
+                          {getAccountStatusBadge(displayUser?.status || '')}
+                        </div>
+                      )}
                     </div>
 
                     {/* Họ và tên */}
@@ -436,18 +484,23 @@ const Profile = () => {
                       <div className="grid gap-2">
                         <Label>Giới tính</Label>
                         {isEditing ? (
-                          <Select value={gender} onValueChange={setGender}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn giới tính" />
-                            </SelectTrigger>
-                            <SelectContent>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                <span>
+                                  {gender === 'MALE' ? 'Nam' : gender === 'FEMALE' ? 'Nữ' : gender === 'OTHER' ? 'Khác' : 'Chọn giới tính'}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[200px]">
                               {genders.map(g => (
-                                <SelectItem key={g.code} value={g.code}>
+                                <DropdownMenuItem key={g.code} onClick={() => setGender(g.code)}>
                                   {g.name === 'Male' ? 'Nam' : g.name === 'Female' ? 'Nữ' : g.name === 'Other' ? 'Khác' : g.name}
-                                </SelectItem>
+                                </DropdownMenuItem>
                               ))}
-                            </SelectContent>
-                          </Select>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ) : (
                           <Input
                             value={displayUser?.gender === 'MALE' ? 'Nam' : displayUser?.gender === 'FEMALE' ? 'Nữ' : displayUser?.gender === 'OTHER' ? 'Khác' : ''}

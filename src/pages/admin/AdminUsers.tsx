@@ -39,11 +39,11 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 // Định nghĩa các action có thể thay đổi status
 const STATUS_ACTIONS = [
-  { status: 'ACTIVE', label: 'Kích hoạt', icon: <CheckCircle className="h-4 w-4 mr-2" /> },
-  { status: 'INACTIVE', label: 'Vô hiệu hoá', icon: <ShieldX className="h-4 w-4 mr-2" /> },
-  { status: 'LOCKED', label: 'Khoá', icon: <Lock className="h-4 w-4 mr-2" /> },
-  { status: 'SUSPENDED', label: 'Tạm ngưng', icon: <AlertCircle className="h-4 w-4 mr-2" /> },
-  { status: 'BANNED', label: 'Cấm', icon: <Ban className="h-4 w-4 mr-2" /> },
+  { status: 'ACTIVE', label: 'Kích hoạt', icon: <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> },
+  { status: 'INACTIVE', label: 'Vô hiệu hoá', icon: <ShieldX className="h-4 w-4 mr-2 text-gray-600" /> },
+  { status: 'LOCKED', label: 'Khoá', icon: <Lock className="h-4 w-4 mr-2 text-orange-600" /> },
+  { status: 'SUSPENDED', label: 'Tạm ngưng', icon: <AlertCircle className="h-4 w-4 mr-2 text-red-500" /> },
+  { status: 'BANNED', label: 'Cấm', icon: <Ban className="h-4 w-4 mr-2 text-red-700" /> },
 ];
 
 const AdminUsers = () => {

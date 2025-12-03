@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
-        status: me.status,
+        status: me.status?.toUpperCase(),
       };
       saveUserAndTokens(u, { access, refresh });
       return { success: true };
@@ -300,7 +300,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
-        status: me.status,
+        status: me.status?.toUpperCase(),
       };
 
       saveUserAndTokens(u, { access, refresh });
@@ -395,7 +395,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
-        status: me.status,
+        status: me.status?.toUpperCase(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       setUser(u);
@@ -435,7 +435,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phone: me.phone,
         gender: me.gender,
         dob: me.dob,
-        status: me.status,
+        status: me.status?.toUpperCase(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       setUser(u);
