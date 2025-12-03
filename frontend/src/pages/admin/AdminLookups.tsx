@@ -26,16 +26,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Table,
   TableBody,
   TableCell,
@@ -43,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Building2, Briefcase, Clock, DollarSign, Users, Palette, Shield, Loader2, Check, X, GripVertical, CheckCircle, ShieldX, Lock, AlertCircle, Ban, CircleHelp, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Building2, Briefcase, Clock, DollarSign, Users, Shield, Activity, Loader2, Check, X, GripVertical, CheckCircle, ShieldX, Lock, AlertCircle, Ban, CircleHelp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Types for lookup items
@@ -187,7 +177,7 @@ const LOOKUP_CATEGORIES: LookupCategory[] = [
   {
     key: 'statuses',
     label: 'Trạng thái tài khoản',
-    icon: <Palette className="h-4 w-4" />,
+    icon: <Activity className="h-4 w-4" />,
     apiPath: '/api/users/statuses/',
     fields: [
       { name: 'code', label: 'Mã', type: 'text', required: true },
@@ -749,31 +739,33 @@ const AdminLookups = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xoá</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Xác nhận xoá</DialogTitle>
+            <DialogDescription>
               Bạn có chắc chắn muốn xoá danh mục "{deletingItem?.name}"?
               <br />
               <span className="text-destructive font-medium">
                 Hành động này không thể hoàn tác. Nếu danh mục đang được sử dụng, việc xoá có thể thất bại.
               </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Huỷ</AlertDialogCancel>
-            <AlertDialogAction
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={saving}>
+              Huỷ
+            </Button>
+            <Button
+              variant="destructive"
               onClick={handleDelete}
               disabled={saving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Xoá
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

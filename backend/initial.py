@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
-All-in-one startup script for Django project.
-- First run: create venv, install dependencies, migrate, load fixtures, create superuser
-- Subsequent runs: just start the server
+Initial setup script for Django project.
+- Create venv, install dependencies, migrate, load fixtures, create superuser
 """
 
 import os
@@ -55,7 +54,7 @@ def run_command(cmd, description=None):
     
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
-        print(f"❌ Command failed: {cmd}")
+        print(f"[ERROR] Command failed: {cmd}")
         return False
     return True
 
@@ -63,31 +62,31 @@ def run_command(cmd, description=None):
 def setup_venv():
     """Create virtual environment if not exists."""
     if VENV_DIR.exists():
-        print("✅ Virtual environment already exists.")
+        print("[OK] Virtual environment already exists.")
         return True
     
-    print("📦 Creating virtual environment...")
+    print("[INFO] Creating virtual environment...")
     result = subprocess.run([sys.executable, '-m', 'venv', str(VENV_DIR)])
     if result.returncode != 0:
-        print("❌ Failed to create virtual environment")
+        print("[ERROR] Failed to create virtual environment")
         return False
     
-    print("✅ Virtual environment created.")
+    print("[OK] Virtual environment created.")
     return True
 
 
 def install_dependencies():
     """Install dependencies from requirements.txt."""
     if not REQUIREMENTS_FILE.exists():
-        print("⚠️  requirements.txt not found. Skipping dependencies installation.")
+        print("[WARN] requirements.txt not found. Skipping dependencies installation.")
         return True
     
     pip = get_pip_executable()
-    print(f"📦 Installing dependencies from requirements.txt...")
+    print("[INFO] Installing dependencies from requirements.txt...")
     
     result = subprocess.run([pip, 'install', '-r', str(REQUIREMENTS_FILE)])
     if result.returncode != 0:
-        print("❌ Failed to install dependencies")
+        print("[ERROR] Failed to install dependencies")
         return False
     
     # Check if PostgreSQL is configured, install driver if needed
@@ -99,12 +98,12 @@ def install_dependencies():
             with open(env_file, 'r') as f:
                 env_content = f.read()
                 if 'DB_ENGINE=postgresql' in env_content.lower().replace(' ', ''):
-                    print("📦 PostgreSQL detected. Installing PostgreSQL driver...")
+                    print("[INFO] PostgreSQL detected. Installing PostgreSQL driver...")
                     result = subprocess.run([pip, 'install', '-r', str(postgres_req)])
                     if result.returncode != 0:
-                        print("⚠️  Failed to install PostgreSQL driver. Make sure PostgreSQL is configured correctly.")
+                        print("[WARN] Failed to install PostgreSQL driver. Make sure PostgreSQL is configured correctly.")
     
-    print("✅ Dependencies installed.")
+    print("[OK] Dependencies installed.")
     return True
 
 
@@ -114,26 +113,26 @@ def check_env_file():
     env_example = BASE_DIR / '.env.example'
     
     if env_file.exists():
-        print("✅ .env file exists.")
+        print("[OK] .env file exists.")
         return True
     
     if env_example.exists():
-        print("⚠️  .env file not found. Creating from .env.example...")
+        print("[WARN] .env file not found. Creating from .env.example...")
         import shutil
         shutil.copy(env_example, env_file)
-        print("📝 Created .env from .env.example")
-        print("⚠️  IMPORTANT: Please edit .env and fill in your configuration!")
-        print("   Then run this script again.")
+        print("[INFO] Created .env from .env.example")
+        print("[WARN] IMPORTANT: Please edit .env and fill in your configuration!")
+        print("       Then run this script again.")
         return False
     else:
-        print("❌ Neither .env nor .env.example found!")
-        print("   Please create .env file with required configuration.")
+        print("[ERROR] Neither .env nor .env.example found!")
+        print("        Please create .env file with required configuration.")
         return False
 
 
 def first_time_setup():
     """Run first-time setup: venv, dependencies, migrate, fixtures, superuser."""
-    print("\n🚀 First-time setup detected. Running initialization...\n")
+    print("\n[START] First-time setup detected. Running initialization...\n")
     
     python = get_python_executable()
     
@@ -177,37 +176,18 @@ def first_time_setup():
     )
     
     if 'True' in check_superuser.stdout:
-        print("✅ Superuser already exists. Skipping...")
+        print("[OK] Superuser already exists. Skipping...")
     else:
         # Interactive superuser creation
         subprocess.run(f'"{python}" manage.py createsuperuser', shell=True)
     
     # Mark setup as complete
     SETUP_MARKER.touch()
-    print("\n✅ First-time setup complete!")
+    print("\n[OK] First-time setup complete!")
     return True
 
 
-def run_server(port=8000):
-    """Start Django development server."""
-    python = get_python_executable()
-    
-    print(f"\n🌐 Starting Django server on port {port}...")
-    print(f"   Access at: http://localhost:{port}/")
-    print(f"   Admin at:  http://localhost:{port}/admin/")
-    print("\n   Press Ctrl+C to stop.\n")
-    
-    try:
-        os.system(f'"{python}" manage.py runserver {port}')
-    except KeyboardInterrupt:
-        pass
-    
-    print("\n\n👋 Server stopped.")
-
-
 def main():
-    # Parse optional port argument
-    port = 8000
     force_setup = False
     
     for arg in sys.argv[1:]:
@@ -216,20 +196,17 @@ def main():
             force_setup = True
             if SETUP_MARKER.exists():
                 SETUP_MARKER.unlink()
-            print("🔄 Reset flag detected. Will re-run setup.")
-        elif arg.isdigit():
-            port = int(arg)
+            print("[INFO] Reset flag detected. Will re-run setup.")
     
     # Check if first-time setup is needed
     if not SETUP_MARKER.exists() or force_setup:
         if not first_time_setup():
-            print("\n Setup failed. Please fix errors and try again.")
+            print("\n[ERROR] Setup failed. Please fix errors and try again.")
             sys.exit(1)
     else:
-        print(" Setup already complete. Starting server...")
+        print("[INFO] Setup already complete.")
     
-    # Start server
-    run_server(port)
+    print("\n[DONE] Initial setup finished successfully.")
 
 
 if __name__ == '__main__':
