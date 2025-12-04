@@ -96,7 +96,7 @@ import dj_database_url
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Production: use DATABASE_URL
+    # Production
     DATABASES = {
         'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
@@ -116,7 +116,6 @@ else:
             }
         }
     else:
-        # SQLite - no installation required, perfect for demo/testing
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
@@ -163,10 +162,6 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files (user uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
 # Cloudinary configuration
 import cloudinary
 cloudinary.config(
@@ -175,6 +170,7 @@ cloudinary.config(
     api_secret = os.getenv('CLOUDINARY_API_SECRET'),
     secure = True
 )
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -190,6 +186,7 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 CORS_ALLOW_ALL_ORIGINS = True
 # Optionally expose Authorization header and ensure common headers are allowed
 from corsheaders.defaults import default_headers
@@ -197,9 +194,3 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'authorization',
     'content-type',
 ]
-
-# If you prefer restricting origins during development, you can instead set:
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:5173',
-#     'http://127.0.0.1:5173',
-# ]
