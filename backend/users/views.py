@@ -28,6 +28,14 @@ from .serializers import (
     PasswordChangeSerializer,
 )
 
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+from django.utils import timezone
+from datetime import timedelta
+from .models import PasswordResetCode
+from .serializers import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+
 # Custom Permissions
 
 class IsOwnerOrAdmin(permissions.BasePermission):
@@ -447,6 +455,74 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception:
             pass
         return data
+
+
+class PasswordResetRequestView(APIView):
+    """Request a password reset code to be sent to the user's registered email."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].strip()
+        try:
+            user = CustomUser.objects.get(email__iexact=email)
+        except CustomUser.DoesNotExist:
+            return Response({'detail': 'No user with this email.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate 6-digit numeric code
+        code = f"{random.randint(0, 999999):06d}"
+        expires_at = timezone.now() + timedelta(minutes=15)
+
+        # Invalidate older unused codes for this user
+        PasswordResetCode.objects.filter(user=user, used=False).update(used=True)
+
+        pr = PasswordResetCode.objects.create(user=user, code=code, expires_at=expires_at)
+
+        subject = 'Password reset code'
+        message = f'Your password reset code is: {code}\nIt will expire in 15 minutes.'
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or getattr(settings, 'EMAIL_HOST_USER', None)
+
+        try:
+            send_mail(subject, message, from_email, [user.email], fail_silently=False)
+        except Exception as e:
+            return Response({'detail': f'Failed to send email: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'detail': 'Reset code sent to email.'}, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(APIView):
+    """Confirm a password reset by providing email, code, and new password."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].strip()
+        code = serializer.validated_data['code'].strip()
+        new_password = serializer.validated_data['new_password']
+
+        try:
+            user = CustomUser.objects.get(email__iexact=email)
+        except CustomUser.DoesNotExist:
+            return Response({'detail': 'Invalid email or code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        try:
+            pr = PasswordResetCode.objects.get(user=user, code=code, used=False)
+        except PasswordResetCode.DoesNotExist:
+            return Response({'detail': 'Invalid or used code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pr.expires_at and pr.expires_at < now:
+            return Response({'detail': 'Code has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # All good: set password and mark code as used
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        pr.used = True
+        pr.save(update_fields=['used'])
+
+        return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

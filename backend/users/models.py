@@ -129,3 +129,18 @@ class Profile(models.Model):
     def __str__(self):
         user_repr = getattr(self.user, 'username', str(self.user))
         return f"{user_repr}"
+
+
+class PasswordResetCode(models.Model):
+    """Store one-time codes for password reset requests."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    used = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [models.Index(fields=['user', 'code'])]
+
+    def __str__(self):
+        return f"PasswordResetCode(user={self.user}, code={self.code}, used={self.used})"

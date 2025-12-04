@@ -204,3 +204,23 @@ class PasswordChangeSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save(update_fields=['password'])
         return user
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("No user found with this email.")
+        return value
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_email(self, value):
+        if not User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("No user found with this email.")
+        return value

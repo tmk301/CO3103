@@ -15,6 +15,8 @@ from .views import (
     UserViewSet,
     AvatarUploadView,
     CVUploadView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
 )
 
 router = DefaultRouter()
@@ -33,4 +35,6 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('avatar/', AvatarUploadView.as_view(), name='avatar-upload'),
     path('cv/', CVUploadView.as_view(), name='cv-upload'),
+    path('password-reset/request/', PasswordResetRequestView.as_view(), name='password-reset-request'),
+    path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
 ]
