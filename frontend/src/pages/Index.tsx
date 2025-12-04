@@ -8,6 +8,7 @@ import { useAuth, API_BASE } from '@/contexts/AuthContext';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { resolveWorkFormatLabel, resolveJobTypeLabel, badgeColorForKey } from '@/lib/badge';
 
 interface JobForm {
   id: number;
@@ -99,14 +100,7 @@ const Index = () => {
     return posted.toLocaleDateString('vi-VN');
   };
 
-  const getWorkFormatColor = (format?: string) => {
-    const colors: Record<string, string> = {
-      'onsite': 'bg-primary/10 text-primary',
-      'remote': 'bg-success/10 text-success',
-      'hybrid': 'bg-accent/10 text-accent',
-    };
-    return colors[format?.toLowerCase() || ''] || 'bg-muted text-muted-foreground';
-  };
+  const getWorkFormatColor = (format?: string) => badgeColorForKey(format || '');
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -232,15 +226,24 @@ const Index = () => {
                           </div>
 
                           <div className="flex flex-wrap gap-2">
-                            {job.work_format && (
-                              <Badge className={getWorkFormatColor(job.work_format)}>
-                                <Briefcase className="h-3 w-3 mr-1" />
-                                {job.work_format}
-                              </Badge>
-                            )}
-                            {job.job_type && (
-                              <Badge variant="outline">{job.job_type}</Badge>
-                            )}
+                            {(() => {
+                              const wfLabel = resolveWorkFormatLabel(job);
+                              const jtLabel = resolveJobTypeLabel(job);
+                              const colorKey = job.work_format || job.job_type || job.type || '';
+                              return (
+                                <>
+                                  {wfLabel && (
+                                    <Badge className={badgeColorForKey(colorKey)}>
+                                      <Briefcase className="h-3 w-3 mr-1" />
+                                      {wfLabel}
+                                    </Badge>
+                                  )}
+                                  {jtLabel && (
+                                    <Badge variant="outline">{jtLabel}</Badge>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { resolveWorkFormatLabel, resolveJobTypeLabel, badgeColorForKey } from '@/lib/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   MapPin, DollarSign, Briefcase, Clock, Building2,
@@ -337,15 +338,24 @@ const JobDetail = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {(job.display_work_format || job.work_format) && (
-                      <Badge variant="default">
-                        <Briefcase className="h-3 w-3 mr-1" />
-                        {job.display_work_format || job.work_format}
-                      </Badge>
-                    )}
-                    {(job.display_job_type || job.job_type) && (
-                      <Badge variant="outline">{job.display_job_type || job.job_type}</Badge>
-                    )}
+                    {(() => {
+                      const wfLabel = resolveWorkFormatLabel(job);
+                      const jtLabel = resolveJobTypeLabel(job);
+                      const colorKey = job.work_format || job.job_type || '';
+                      return (
+                        <>
+                          {wfLabel && (
+                            <Badge className={badgeColorForKey(colorKey)}>
+                              <Briefcase className="h-3 w-3 mr-1" />
+                              {wfLabel}
+                            </Badge>
+                          )}
+                          {jtLabel && (
+                            <Badge variant="outline">{jtLabel}</Badge>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
