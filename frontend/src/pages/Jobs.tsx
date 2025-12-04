@@ -323,39 +323,13 @@ const Jobs = () => {
 
     // Salary filter
     const minSalary = salaryMin ? parseFloat(salaryMin) : null;
-    const maxSalary = salaryMax ? parseFloat(salaryMax) : null;
+
+    if (minSalary !== null) {
+      if (!job.salary_from || job.salary_from < minSalary) return false;
+    }
     
-    if (minSalary !== null || maxSalary !== null) {
-      // Only filter if currency matches (or currency is 'all')
-      if (currency !== 'all') {
-        const selectedCode = String(currency).toLowerCase();
-        const selectedObj = currencies.find(c => String(c.code).toLowerCase() === selectedCode);
-        const selectedName = selectedObj?.name?.toString().toLowerCase() || '';
-
-        const jobCode = job.salary_currency?.toString().toLowerCase() || '';
-        const jobDisplay = job.display_salary_currency?.toString().toLowerCase() || '';
-        const jobSymbol = job.salary_currency_symbol?.toString().toLowerCase() || '';
-
-        const match = (
-          // exact code match (e.g. 'usd' === 'usd')
-          (jobCode && jobCode === selectedCode) ||
-          // display name exact match (e.g. 'việt nam đồng' === 'việt nam đồng')
-          (selectedName && jobDisplay && jobDisplay === selectedName) ||
-          // symbol match (e.g. '$' or 'đ') against selected code or name (best-effort)
-          (jobSymbol && (jobSymbol === selectedCode || jobSymbol === selectedName)) ||
-          // some back-compat/fallback: display contains code or code appears in job fields
-          (jobDisplay && selectedCode && jobDisplay.includes(selectedCode)) ||
-          (jobCode && selectedCode && jobCode.includes(selectedCode))
-        );
-
-        if (!match) return false;
-      }
-      
-      const jobMin = job.salary_from || 0;
-      const jobMax = job.salary_to || job.salary_from || 0;
-      
-      if (minSalary !== null && jobMax < minSalary) return false;
-      if (maxSalary !== null && jobMin > maxSalary) return false;
+    if (currency !== 'all') {
+      if (job.salary_currency?.toLowerCase() !== currency.toLowerCase()) return false;
     }
 
     // Number of positions filter
@@ -548,16 +522,6 @@ const Jobs = () => {
                       placeholder="0"
                       value={salaryMin}
                       onChange={(e) => setSalaryMin(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Mức lương tối đa</label>
-                    <Input
-                      type="number"
-                      placeholder="Không giới hạn"
-                      value={salaryMax}
-                      onChange={(e) => setSalaryMax(e.target.value)}
                     />
                   </div>
 
