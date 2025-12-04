@@ -328,8 +328,27 @@ const Jobs = () => {
     if (minSalary !== null || maxSalary !== null) {
       // Only filter if currency matches (or currency is 'all')
       if (currency !== 'all') {
-        const jobCurrency = (job.salary_currency || job.display_salary_currency || job.salary_currency_symbol || '').toString();
-        if (!jobCurrency || jobCurrency.toLowerCase() !== String(currency).toLowerCase()) return false;
+        const selectedCode = String(currency).toLowerCase();
+        const selectedObj = currencies.find(c => String(c.code).toLowerCase() === selectedCode);
+        const selectedName = selectedObj?.name?.toString().toLowerCase() || '';
+
+        const jobCode = job.salary_currency?.toString().toLowerCase() || '';
+        const jobDisplay = job.display_salary_currency?.toString().toLowerCase() || '';
+        const jobSymbol = job.salary_currency_symbol?.toString().toLowerCase() || '';
+
+        const match = (
+          // exact code match (e.g. 'usd' === 'usd')
+          (jobCode && jobCode === selectedCode) ||
+          // display name exact match (e.g. 'việt nam đồng' === 'việt nam đồng')
+          (selectedName && jobDisplay && jobDisplay === selectedName) ||
+          // symbol match (e.g. '$' or 'đ') against selected code or name (best-effort)
+          (jobSymbol && (jobSymbol === selectedCode || jobSymbol === selectedName)) ||
+          // some back-compat/fallback: display contains code or code appears in job fields
+          (jobDisplay && selectedCode && jobDisplay.includes(selectedCode)) ||
+          (jobCode && selectedCode && jobCode.includes(selectedCode))
+        );
+
+        if (!match) return false;
       }
       
       const jobMin = job.salary_from || 0;
