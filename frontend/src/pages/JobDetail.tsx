@@ -250,14 +250,22 @@ const JobDetail = () => {
         userEmail: user.email,
         cvUrl: cvUrl,
         coverLetter: '',
+      }).then((success) => {
+        if (success) {
+          toast({
+            title: "Ứng tuyển thành công!",
+            description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
+          });
+          setHasApplied(true);
+        } else {
+          toast({
+            title: 'Lỗi',
+            description: 'Không thể gửi đơn ứng tuyển. Vui lòng thử lại.',
+            variant: 'destructive',
+          });
+        }
       });
 
-      toast({
-        title: "Ứng tuyển thành công!",
-        description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
-      });
-
-      setHasApplied(true);
       setShowApplyDialog(false);
       setCustomCV(null);
       setUseDefaultCV(true);

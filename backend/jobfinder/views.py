@@ -18,6 +18,7 @@ from .models import (
     Ward,
     Form,
     PendingLookup,
+    Application,
 )
 from .serializers import (
     VerifiedCompanySerializer,
@@ -29,6 +30,8 @@ from .serializers import (
     DistrictSerializer,
     WardSerializer,
     FormSerializer,
+    ApplicationSerializer,
+    ApplicationCreateSerializer,
 )
 
 
@@ -405,3 +408,156 @@ class PendingLookupViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    """
+    Application (Đơn ứng tuyển) endpoints.
+    
+    - Applicants can: create, list their own, view their own
+    - Employers can: list applications for their jobs, update status
+    - Admin can: view all
+    """
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ApplicationCreateSerializer
+        return ApplicationSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.IsAuthenticated()]
+        if self.action in ['update', 'partial_update']:
+            return [permissions.IsAuthenticated()]
+        if self.action == 'destroy':
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated()]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Application.objects.none()
+        
+        # Admin sees all
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        if is_admin:
+            return Application.objects.select_related('form', 'applicant').all()
+        
+        # Check user role
+        user_role = user.role.code.upper() if hasattr(user, 'role') and user.role else None
+        
+        # Employer sees applications to their own jobs
+        if user_role == 'EMPLOYER':
+            return Application.objects.select_related('form', 'applicant').filter(
+                form__created_by=user
+            )
+        
+        # Job seeker sees their own applications
+        return Application.objects.select_related('form', 'applicant').filter(
+            applicant=user
+        )
+    
+    def perform_create(self, serializer):
+        serializer.save()
+    
+    def update(self, request, *args, **kwargs):
+        """Only employer (job owner) or admin can update status."""
+        instance = self.get_object()
+        user = request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        is_job_owner = instance.form.created_by == user
+        
+        if not (is_admin or is_job_owner):
+            return Response(
+                {'detail': 'Only the job poster or admin can update application status.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Only allow status updates (employers shouldn't edit cover_letter, etc.)
+        if not is_admin:
+            allowed_fields = {'status'}
+            if set(request.data.keys()) - allowed_fields:
+                return Response(
+                    {'detail': 'Employers can only update the status field.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Only the applicant or admin can withdraw/delete an application."""
+        instance = self.get_object()
+        user = request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        is_applicant = instance.applicant == user
+        
+        if not (is_admin or is_applicant):
+            return Response(
+                {'detail': 'Only the applicant or admin can withdraw this application.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        return super().destroy(request, *args, **kwargs)
+    
+    @action(detail=False, methods=['get'], url_path='for-job/(?P<job_id>[^/.]+)')
+    def for_job(self, request, job_id=None):
+        """Get all applications for a specific job (employer/admin only)."""
+        user = request.user
+        
+        try:
+            form = Form.objects.get(pk=job_id)
+        except Form.DoesNotExist:
+            return Response({'detail': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        is_job_owner = form.created_by == user
+        
+        if not (is_admin or is_job_owner):
+            return Response(
+                {'detail': 'Only the job poster or admin can view applications.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        applications = Application.objects.select_related('applicant').filter(form=form)
+        serializer = ApplicationSerializer(applications, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """Employer/admin action to approve an application."""
+        instance = self.get_object()
+        user = request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        is_job_owner = instance.form.created_by == user
+        
+        if not (is_admin or is_job_owner):
+            return Response(
+                {'detail': 'Only the job poster or admin can approve applications.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instance.status = 'approved'
+        instance.save()
+        return Response(ApplicationSerializer(instance).data)
+    
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        """Employer/admin action to reject an application."""
+        instance = self.get_object()
+        user = request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'role') and user.role and user.role.code.upper() == 'ADMIN')
+        is_job_owner = instance.form.created_by == user
+        
+        if not (is_admin or is_job_owner):
+            return Response(
+                {'detail': 'Only the job poster or admin can reject applications.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instance.status = 'rejected'
+        instance.save()
+        return Response(ApplicationSerializer(instance).data)

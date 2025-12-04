@@ -319,3 +319,35 @@ class Form(models.Model):
         if self.salary_currency and getattr(self.salary_currency, 'code', '').lower() != 'other':
             return self.salary_currency.name
         return self.salary_currency_other or None
+
+
+class Application(models.Model):
+    """Đơn ứng tuyển - lưu thông tin ứng viên nộp đơn vào job"""
+    STATUS_CHOICES = [
+        ('pending', 'Chờ xử lý'),
+        ('approved', 'Được chấp nhận'),
+        ('rejected', 'Bị từ chối'),
+    ]
+    
+    form = models.ForeignKey(
+        Form,
+        on_delete=models.CASCADE,
+        related_name='applications'
+    )
+    applicant = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='job_applications'
+    )
+    cover_letter = models.TextField(blank=True)
+    cv_url = models.URLField(blank=True, help_text='Link to CV (Cloudinary or external)')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    applied_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-applied_at']
+        unique_together = ['form', 'applicant']  # Mỗi user chỉ ứng tuyển 1 lần/job
+    
+    def __str__(self):
+        return f"{self.applicant.username} → {self.form.title}"

@@ -12,6 +12,7 @@ from .models import (
     District,
     Ward,
     Form,
+    Application,
 )
 
 User = get_user_model()
@@ -179,3 +180,62 @@ class FormSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
 
         return data
+
+
+# Application Serializers
+
+class ApplicationSerializer(serializers.ModelSerializer):
+    applicant_id = serializers.IntegerField(source='applicant.id', read_only=True)
+    applicant_name = serializers.SerializerMethodField()
+    applicant_email = serializers.EmailField(source='applicant.email', read_only=True)
+    applicant_avatar = serializers.CharField(source='applicant.avatar', read_only=True)
+    job_id = serializers.IntegerField(source='form.id', read_only=True)
+    job_title = serializers.CharField(source='form.title', read_only=True)
+    
+    class Meta:
+        model = Application
+        fields = [
+            'id',
+            'form',
+            'job_id',
+            'job_title',
+            'applicant',
+            'applicant_id',
+            'applicant_name',
+            'applicant_email',
+            'applicant_avatar',
+            'cover_letter',
+            'cv_url',
+            'status',
+            'applied_at',
+            'updated_at',
+        ]
+        read_only_fields = ['applicant', 'applied_at', 'updated_at']
+    
+    def get_applicant_name(self, obj):
+        user = obj.applicant
+        if user.first_name or user.last_name:
+            return f"{user.first_name} {user.last_name}".strip()
+        return user.username
+
+
+class ApplicationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating applications - applicant auto-set from request"""
+    class Meta:
+        model = Application
+        fields = ['form', 'cover_letter', 'cv_url']
+    
+    def validate_form(self, value):
+        # Check if job is active and approved
+        if not value.is_active_and_approved():
+            raise serializers.ValidationError("This job is not accepting applications.")
+        return value
+    
+    def create(self, validated_data):
+        validated_data['applicant'] = self.context['request'].user
+        # Get CV URL from user profile if not provided
+        if not validated_data.get('cv_url'):
+            user = self.context['request'].user
+            if hasattr(user, 'profile') and user.profile.cv:
+                validated_data['cv_url'] = user.profile.cv
+        return super().create(validated_data)
