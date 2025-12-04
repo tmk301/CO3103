@@ -62,6 +62,7 @@ const JobDetail = () => {
   const [useDefaultCV, setUseDefaultCV] = useState(true);
   const [customCV, setCustomCV] = useState<File | null>(null);
   const [uploadingCV, setUploadingCV] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [job, setJob] = useState<JobForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,6 +202,7 @@ const JobDetail = () => {
     if (!user || !job) return;
 
     setUploadingCV(true);
+    setApplying(true);
     try {
       // Determine which CV to use
       let cvUrl = user.cv;
@@ -243,28 +245,28 @@ const JobDetail = () => {
         return;
       }
 
-      applyToJob(String(job.id), {
+      const success = await applyToJob(String(job.id), {
         jobId: String(job.id),
         userId: user.id,
         userName: user.name || user.username || '',
         userEmail: user.email,
         cvUrl: cvUrl,
         coverLetter: '',
-      }).then((success) => {
-        if (success) {
-          toast({
-            title: "Ứng tuyển thành công!",
-            description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
-          });
-          setHasApplied(true);
-        } else {
-          toast({
-            title: 'Lỗi',
-            description: 'Không thể gửi đơn ứng tuyển. Vui lòng thử lại.',
-            variant: 'destructive',
-          });
-        }
       });
+
+      if (success) {
+        toast({
+          title: "Ứng tuyển thành công!",
+          description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
+        });
+        setHasApplied(true);
+      } else {
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể gửi đơn ứng tuyển. Vui lòng thử lại.',
+          variant: 'destructive',
+        });
+      }
 
       setShowApplyDialog(false);
       setCustomCV(null);
@@ -277,6 +279,7 @@ const JobDetail = () => {
       });
     } finally {
       setUploadingCV(false);
+      setApplying(false);
     }
   };
 
