@@ -443,15 +443,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if is_admin:
             return Application.objects.select_related('form', 'applicant').all()
         
-        # Check user role
-        user_role = user.role.code.upper() if hasattr(user, 'role') and user.role else None
-        
-        # Employer sees applications to their own jobs
-        if user_role == 'EMPLOYER':
-            return Application.objects.select_related('form', 'applicant').filter(
-                form__created_by=user
-            )
-        
+        # If this user has created any forms, treat them as the job owner (employer)
+        try:
+            from .models import Form as JobFormModel
+            if JobFormModel.objects.filter(created_by=user).exists():
+                return Application.objects.select_related('form', 'applicant').filter(
+                    form__created_by=user
+                )
+        except Exception:
+            # fallback to role-based check if something goes wrong
+            pass
+
         # Job seeker sees their own applications
         return Application.objects.select_related('form', 'applicant').filter(
             applicant=user
