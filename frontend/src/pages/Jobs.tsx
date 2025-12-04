@@ -327,7 +327,10 @@ const Jobs = () => {
     
     if (minSalary !== null || maxSalary !== null) {
       // Only filter if currency matches (or currency is 'all')
-      if (currency !== 'all' && job.salary_currency !== currency) return false;
+      if (currency !== 'all') {
+        const jobCurrency = (job.salary_currency || job.display_salary_currency || job.salary_currency_symbol || '').toString();
+        if (!jobCurrency || jobCurrency.toLowerCase() !== String(currency).toLowerCase()) return false;
+      }
       
       const jobMin = job.salary_from || 0;
       const jobMax = job.salary_to || job.salary_from || 0;
