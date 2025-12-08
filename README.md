@@ -25,6 +25,7 @@ A full-stack job search platform built with Django (Backend) and React + Vite (F
 			- [1. Install Dependencies](#1-install-dependencies)
 			- [2. Run Development Server](#2-run-development-server)
 		- [III. Start servers:](#iii-start-servers)
+	- [Website for fast demo](#website-for-fast-demo)
 
 ## Overview
 
@@ -178,3 +179,7 @@ python start_servers.py
 # Flags:
 # --open: open frontend in browser
 ```
+
+## Website for fast demo
+
+Access the deployed demo [here](https://co-3103.vercel.app)
