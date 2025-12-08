@@ -31,11 +31,11 @@ from django.core.management import call_command
 ALL_FIXTURES = {
     'users': ('backend/users/fixtures/users_lookups.json', 'Users lookups (Role, Status, Gender)'),
     'basic': ('backend/jobfinder/fixtures/01_lookups_basic.json', 'Basic lookups (Company, WorkFormat, JobType, Currency, AdministrativeUnit)'),
-    'province': ('backend/jobfinder/fixtures/01_lookups_province.json', 'Province lookups'),
-    'district': ('backend/jobfinder/fixtures/02_lookups_district.json', 'District lookups'),
-    'ward1': ('backend/jobfinder/fixtures/03_lookups_ward_part1.json', 'Ward lookups (Part 1/3)'),
-    'ward2': ('backend/jobfinder/fixtures/03_lookups_ward_part2.json', 'Ward lookups (Part 2/3)'),
-    'ward3': ('backend/jobfinder/fixtures/03_lookups_ward_part3.json', 'Ward lookups (Part 3/3)'),
+    'province': ('backend/jobfinder/fixtures/02_lookups_province.json', 'Province lookups'),
+    'district': ('backend/jobfinder/fixtures/03_lookups_district.json', 'District lookups'),
+    'ward1': ('backend/jobfinder/fixtures/04_lookups_ward_part1.json', 'Ward lookups (Part 1/3)'),
+    'ward2': ('backend/jobfinder/fixtures/04_lookups_ward_part2.json', 'Ward lookups (Part 2/3)'),
+    'ward3': ('backend/jobfinder/fixtures/04_lookups_ward_part3.json', 'Ward lookups (Part 3/3)'),
 }
 
 # Thứ tự load fixtures (quan trọng vì có foreign key dependencies)
