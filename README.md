@@ -4,6 +4,28 @@ A full-stack job search platform built with Django (Backend) and React + Vite (F
 
 ---
 
+## Table of Contents
+- [JobFinder - Job Search Platform](#jobfinder---job-search-platform)
+	- [Table of Contents](#table-of-contents)
+	- [Overview](#overview)
+	- [Architecture](#architecture)
+	- [Repository Layout (high level)](#repository-layout-high-level)
+	- [Project Structure](#project-structure)
+	- [Backend: modules \& responsibilities](#backend-modules--responsibilities)
+	- [Frontend: key components](#frontend-key-components)
+	- [Important API Endpoints](#important-api-endpoints)
+	- [Environment variables and secrets](#environment-variables-and-secrets)
+	- [Initial Setup](#initial-setup)
+		- [I. Initial Backend](#i-initial-backend)
+			- [1. Initial Environment and Requirements:](#1-initial-environment-and-requirements)
+			- [2. Setup .env file](#2-setup-env-file)
+			- [3. Migrate Database and Create Superuser](#3-migrate-database-and-create-superuser)
+			- [4. Run Development Server](#4-run-development-server)
+		- [II. Initial Frontend](#ii-initial-frontend)
+			- [1. Install Dependencies](#1-install-dependencies)
+			- [2. Run Development Server](#2-run-development-server)
+		- [III. Start servers:](#iii-start-servers)
+
 ## Overview
 
 JobFinder is a full-stack job search and hiring platform composed of a Django REST backend and a React + Vite frontend. The repository contains everything needed for local development and for preparing a demo, including database fixtures, helper scripts, and a set of reusable UI components.
@@ -20,6 +42,10 @@ This README (English sections) documents the system architecture, project layout
 
 - `backend/` — Django project and apps (`main`, `users`, `jobfinder`). Contains management scripts, migrations, fixtures, and environment example.
 - `frontend/` — React + Vite application, UI components, contexts, pages, and build configuration.
+
+## Project Structure
+
+For a detailed breakdown of the project structure with all folders and files, see [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md).
 
 ## Backend: modules & responsibilities
 
@@ -61,6 +87,10 @@ Note: actual paths may vary if you change the `api` prefix in `main/urls.py`.
 
 ```bash
 python backend/initial_venv.py
+# Flags:
+# --force: recreate .venv if exists
+# --install: install requirements after creating venv
+# --activate: activate the virtual environment after creation
 ```
 
 Or, manually:
@@ -84,7 +114,7 @@ pip install -r requirements.txt
 ```bash
 python backend/make_and_migrate.py
 python backend/load_fixtures.py
-python backend/create_superuser.py
+python backend/create_superuser.py # Use info from .env
 ```
 
 Or, manually:
@@ -116,4 +146,35 @@ npm install
 
 ```bash
 npm run dev
+```
+
+### III. Start servers:
+
+1. Start the backend server:
+
+```bash
+cd backend
+python manage.py runserver
+```
+
+Remember to have your virtual environment activated.
+
+```bash
+source .venv/Scripts/activate  # Windows
+# source .venv/bin/activate  # macOS/Linux
+```
+
+2. Start the frontend server:
+
+```bash
+cd frontend
+npm run dev
+```
+
+3. Optional: Use script to start both servers concurrently:
+
+```bash
+python start_servers.py
+# Flags:
+# --open: open frontend in browser
 ```

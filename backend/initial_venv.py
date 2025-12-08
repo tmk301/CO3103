@@ -8,14 +8,27 @@ VENV_DIR = BASE_DIR / '.venv'
 REQUIREMENTS_FILE = BASE_DIR / 'requirements.txt'
 
 def Setup_VENV():
-    """Create and activate virtual environment."""
+    """Create and activate virtual environment.
+    
+    If --force flag is provided, recreate the venv even if it exists.
+    """
     venv_path = VENV_DIR
-    if not venv_path.exists():
-        print("Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', str(venv_path)])
-        print("Virtual environment created at:", venv_path)
-    else:
-        print("Virtual environment already exists at:", venv_path)
+    force_recreate = '--force' in sys.argv
+    
+    if venv_path.exists():
+        if force_recreate:
+            print(f"Removing existing virtual environment at {venv_path}...")
+            import shutil
+            shutil.rmtree(venv_path)
+            print("Removed.")
+        else:
+            print("Virtual environment already exists at:", venv_path)
+            print("Use --force flag to recreate: python initial_venv.py --force")
+            return venv_path
+    
+    print("Creating virtual environment...")
+    subprocess.run([sys.executable, '-m', 'venv', str(venv_path)])
+    print("Virtual environment created at:", venv_path)
     
     return venv_path
 

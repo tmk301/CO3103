@@ -24,12 +24,12 @@ def load_all_fixtures():
     print("=" * 50)
     
     fixtures = [
-        ('users/fixtures/users_lookups.json', 'Users lookups (Role, Status, Gender)'),
-        ('jobfinder/fixtures/01_lookups_basic.json', 'Basic lookups (Company, WorkFormat, JobType, Currency, Province)'),
-        ('jobfinder/fixtures/02_lookups_district.json', 'District lookups'),
-        ('jobfinder/fixtures/03_lookups_ward_part1.json', 'Ward lookups (Part 1/3)'),
-        ('jobfinder/fixtures/03_lookups_ward_part2.json', 'Ward lookups (Part 2/3)'),
-        ('jobfinder/fixtures/03_lookups_ward_part3.json', 'Ward lookups (Part 3/3)'),
+        ('backend/users/fixtures/users_lookups.json', 'Users lookups (Role, Status, Gender)'),
+        ('backend/jobfinder/fixtures/01_lookups_basic.json', 'Basic lookups (Company, WorkFormat, JobType, Currency, Province)'),
+        ('backend/jobfinder/fixtures/02_lookups_district.json', 'District lookups'),
+        ('backend/jobfinder/fixtures/03_lookups_ward_part1.json', 'Ward lookups (Part 1/3)'),
+        ('backend/jobfinder/fixtures/03_lookups_ward_part2.json', 'Ward lookups (Part 2/3)'),
+        ('backend/jobfinder/fixtures/03_lookups_ward_part3.json', 'Ward lookups (Part 3/3)'),
     ]
     
     for fixture_path, description in fixtures:
