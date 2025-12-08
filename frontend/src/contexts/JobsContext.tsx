@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import * as JobAPI from '../lib/jobfinder';
 
 export type JobType = 'full-time' | 'part-time' | 'hybrid' | 'remote';
@@ -43,18 +43,19 @@ interface JobsContextType {
   deleteJob: (id: string) => void;
   deleteJobsByStatus?: (statuses: JobStatus[]) => void;
   removeJobsByOwner: (ownerId: string) => void;
-  applyToJob: (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => void;
+  applyToJob: (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => Promise<boolean>;
   getJobById: (id: string) => Job | undefined;
   getJobsByEmployer: (employerId: string) => Job[];
   getUserApplications: (userId: string) => Application[];
-  approveApplication: (appId: string) => void;
-  rejectApplication: (appId: string) => void;
+  getApplicationsForJob: (jobId: string) => Promise<Application[]>;
+  approveApplication: (appId: string) => Promise<void>;
+  rejectApplication: (appId: string) => Promise<void>;
+  refreshApplications: () => Promise<void>;
 }
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 const JOBS_KEY = 'jobfinder_jobs';
-const APPLICATIONS_KEY = 'jobfinder_applications';
 
 const demoJobs: Job[] = [
   {
@@ -132,10 +133,6 @@ const initializeJobs = () => {
   if (!existingJobs) {
     localStorage.setItem(JOBS_KEY, JSON.stringify(demoJobs));
   }
-  const existingApps = localStorage.getItem(APPLICATIONS_KEY);
-  if (!existingApps) {
-    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([]));
-  }
 };
 
 
@@ -146,27 +143,9 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     initializeJobs();
     const savedJobs = JSON.parse(localStorage.getItem(JOBS_KEY) || '[]');
-    let savedApps: Application[] = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || '[]');
-    
-    // Clean up duplicate applications - keep only the latest for each user+job combination
-    const appMap = new Map<string, Application>();
-    for (const app of savedApps) {
-      const key = `${app.userId}_${app.jobId}`;
-      const existing = appMap.get(key);
-      if (!existing || new Date(app.appliedDate) > new Date(existing.appliedDate)) {
-        appMap.set(key, app);
-      }
-    }
-    const cleanedApps = Array.from(appMap.values());
-    
-    // Save cleaned apps if there were duplicates
-    if (cleanedApps.length !== savedApps.length) {
-      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(cleanedApps));
-      savedApps = cleanedApps;
-    }
     
     setJobs(savedJobs);
-    setApplications(savedApps);
+    setApplications([]);
 
     // If backend is configured, fetch jobs from API and replace demo/local data
     (async () => {
@@ -178,17 +157,31 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
       } catch (e) {
         // ignore and keep local/demo data
       }
+      
+      // Try to fetch applications from backend (will only work if user is logged in)
+      try {
+        const remoteApps = await JobAPI.listMyApplications();
+        const mapped: Application[] = remoteApps.map((r: JobAPI.ApplicationResponse) => ({
+          id: String(r.id),
+          jobId: String(r.job_id || r.form),
+          userId: String(r.applicant_id || r.applicant),
+          userName: r.applicant_name,
+          userEmail: r.applicant_email,
+          cvUrl: r.cv_url,
+          coverLetter: r.cover_letter,
+          appliedDate: r.applied_at,
+          status: r.status,
+        }));
+        setApplications(mapped);
+      } catch (e) {
+        // User not logged in or API not available - keep empty
+      }
     })();
   }, []);
 
   const saveJobs = (newJobs: Job[]) => {
     setJobs(newJobs);
     localStorage.setItem(JOBS_KEY, JSON.stringify(newJobs));
-  };
-
-  const saveApplications = (newApps: Application[]) => {
-    setApplications(newApps);
-    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(newApps));
   };
 
   const addJob = (job: Omit<Job, 'id' | 'postedDate' | 'status'>) => {
@@ -238,12 +231,12 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         const nextJobs = jobs.filter(job => job.id !== id);
         const nextApps = applications.filter(app => app.jobId !== id);
         saveJobs(nextJobs);
-        saveApplications(nextApps);
+        setApplications(nextApps);
       } catch (e) {
         const nextJobs = jobs.filter(job => job.id !== id);
         const nextApps = applications.filter(app => app.jobId !== id);
         saveJobs(nextJobs);
-        saveApplications(nextApps);
+        setApplications(nextApps);
       }
     })();
   };
@@ -254,7 +247,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     const keepApps = applications.filter(a => keepJobIds.has(a.jobId));
 
     saveJobs(keepJobs);
-    saveApplications(keepApps);
+    setApplications(keepApps);
   };
 
   const removeJobsByOwner = (ownerId: string) => {
@@ -262,39 +255,105 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
     saveJobs(newJobs);
   };
 
-  const applyToJob = (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>) => {
-    (async () => {
-      try {
-        await JobAPI.applyToJob(jobId, application);
-      } catch (e) {
-        // API might not be available, continue with local storage
-      }
+  const applyToJob = async (jobId: string, application: Omit<Application, 'id' | 'appliedDate' | 'status'>): Promise<boolean> => {
+    try {
+      const response = await JobAPI.applyToJob(jobId, {
+        cover_letter: application.coverLetter,
+        cv_url: application.cvUrl,
+      });
       
-      // Remove any existing applications from the same user for the same job
-      const filteredApps = applications.filter(
-        app => !(app.userId === application.userId && app.jobId === jobId)
-      );
-      
+      // Map backend response to local Application format
       const newApplication: Application = {
-        ...application,
-        id: Date.now().toString(),
-        appliedDate: new Date().toISOString(),
-        status: 'pending',
+        id: String(response.id),
+        jobId: String(response.job_id || response.form),
+        userId: String(response.applicant_id || response.applicant),
+        userName: response.applicant_name || application.userName,
+        userEmail: response.applicant_email || application.userEmail,
+        cvUrl: response.cv_url,
+        coverLetter: response.cover_letter,
+        appliedDate: response.applied_at,
+        status: response.status,
       };
-      saveApplications([...filteredApps, newApplication]);
-    })();
+      
+      // Update local state
+      setApplications(prev => {
+        const filtered = prev.filter(
+          app => !(app.userId === application.userId && app.jobId === jobId)
+        );
+        return [...filtered, newApplication];
+      });
+      
+      return true;
+    } catch (e) {
+      console.error('Failed to apply to job:', e);
+      return false;
+    }
   };
 
-  const updateApplicationStatus = (appId: string, status: Application['status']) => {
-    setApplications(prev => {
-      const next = prev.map(a => a.id === appId ? { ...a, status } : a);
-      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(next));
-      return next;
-    });
+  const refreshApplications = useCallback(async () => {
+    try {
+      const response = await JobAPI.listMyApplications();
+      const mapped: Application[] = response.map((r: JobAPI.ApplicationResponse) => ({
+        id: String(r.id),
+        jobId: String(r.job_id || r.form),
+        userId: String(r.applicant_id || r.applicant),
+        userName: r.applicant_name,
+        userEmail: r.applicant_email,
+        cvUrl: r.cv_url,
+        coverLetter: r.cover_letter,
+        appliedDate: r.applied_at,
+        status: r.status,
+      }));
+      setApplications(mapped);
+    } catch (e) {
+      // Keep existing local applications if API fails
+      console.error('Failed to refresh applications:', e);
+    }
+  }, []);
+
+  const getApplicationsForJob = async (jobId: string): Promise<Application[]> => {
+    try {
+      const response = await JobAPI.listApplicationsForJob(jobId);
+      return response.map((r: JobAPI.ApplicationResponse) => ({
+        id: String(r.id),
+        jobId: String(r.job_id || r.form),
+        userId: String(r.applicant_id || r.applicant),
+        userName: r.applicant_name,
+        userEmail: r.applicant_email,
+        cvUrl: r.cv_url,
+        coverLetter: r.cover_letter,
+        appliedDate: r.applied_at,
+        status: r.status,
+      }));
+    } catch (e) {
+      console.error('Failed to get applications for job:', e);
+      return [];
+    }
   };
 
-  const approveApplication = (appId: string) => updateApplicationStatus(appId, 'approved');
-  const rejectApplication = (appId: string) => updateApplicationStatus(appId, 'rejected');
+  const approveApplication = async (appId: string): Promise<void> => {
+    try {
+      const response = await JobAPI.approveApplication(appId);
+      setApplications(prev =>
+        prev.map(a => a.id === appId ? { ...a, status: response.status } : a)
+      );
+    } catch (e) {
+      console.error('Failed to approve application:', e);
+      throw e;
+    }
+  };
+
+  const rejectApplication = async (appId: string): Promise<void> => {
+    try {
+      const response = await JobAPI.rejectApplication(appId);
+      setApplications(prev =>
+        prev.map(a => a.id === appId ? { ...a, status: response.status } : a)
+      );
+    } catch (e) {
+      console.error('Failed to reject application:', e);
+      throw e;
+    }
+  };
 
   const getJobById = (id: string) => jobs.find(job => job.id === id);
 
@@ -318,8 +377,10 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         getJobById,
         getJobsByEmployer,
         getUserApplications,
+        getApplicationsForJob,
         approveApplication,
         rejectApplication,
+        refreshApplications,
       }}
     >
       {children}

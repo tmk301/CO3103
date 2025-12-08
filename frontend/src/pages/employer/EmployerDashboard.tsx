@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, authFetch, API_BASE } from '@/contexts/AuthContext';
-import { useJobs } from '@/contexts/JobsContext';
+import { useJobs, Application } from '@/contexts/JobsContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -36,7 +36,7 @@ interface JobForm {
 const EmployerDashboard = () => {
   const { user, logout } = useAuth();
   const {
-    applications,
+    getApplicationsForJob,
     approveApplication,
     rejectApplication,
   } = useJobs();
@@ -54,6 +54,7 @@ const EmployerDashboard = () => {
   const [jobs, setJobs] = useState<JobForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [userStatuses, setUserStatuses] = useState<Record<string, string>>({});
+  const [jobApplications, setJobApplications] = useState<Application[]>([]);
 
   // Fetch jobs from API
   useEffect(() => {
@@ -73,6 +74,14 @@ const EmployerDashboard = () => {
             j.created_by === user.username || j.created_by === user.email
           );
           setJobs(myJobs);
+          
+          // Fetch applications for all jobs
+          const allApps: Application[] = [];
+          for (const job of myJobs) {
+            const apps = await getApplicationsForJob(String(job.id));
+            allApps.push(...apps);
+          }
+          setJobApplications(allApps);
         }
       } catch (e) {
         console.error('Failed to fetch jobs', e);
@@ -82,12 +91,12 @@ const EmployerDashboard = () => {
     };
 
     fetchJobs();
-  }, [user, logout, navigate]);
+  }, [user, logout, navigate, getApplicationsForJob]);
 
   // Fetch user statuses for all applicants
   useEffect(() => {
     const fetchUserStatuses = async () => {
-      const userIds = [...new Set(applications.map(app => app.userId))];
+      const userIds = [...new Set(jobApplications.map(app => app.userId))];
       const statuses: Record<string, string> = {};
       
       for (const userId of userIds) {
@@ -110,10 +119,10 @@ const EmployerDashboard = () => {
       setUserStatuses(statuses);
     };
 
-    if (applications.length > 0) {
+    if (jobApplications.length > 0) {
       fetchUserStatuses();
     }
-  }, [applications]);
+  }, [jobApplications]);
 
   if (!user || !['user', 'admin'].includes(user.role ?? '')) {
     navigate('/');
@@ -146,14 +155,11 @@ const EmployerDashboard = () => {
     return `Từ ${job.salary_from.toLocaleString()} ${symbol}`;
   };
 
-  // Gộp ứng viên cho các job của employer
-  // Chỉ hiển thị đơn từ user có trạng thái ACTIVE
-  const jobApplications = applications.filter(app => {
-    const isJobMatch = jobs.some(job => String(job.id) === app.jobId);
+  // Lọc ứng viên chỉ hiển thị user có trạng thái ACTIVE
+  const filteredApplications = jobApplications.filter(app => {
     const userStatus = userStatuses[app.userId];
     // Chỉ hiển thị nếu đã fetch được status và status là ACTIVE
-    const isUserActive = userStatus === 'ACTIVE';
-    return isJobMatch && isUserActive;
+    return userStatus === 'ACTIVE';
   });
 
   // Badge trạng thái job
@@ -221,6 +227,32 @@ const EmployerDashboard = () => {
 
   const getJobTitle = (jobId: string) =>
     jobs.find(j => String(j.id) === jobId)?.title || '—';
+
+  const handleApproveApplication = async (appId: string) => {
+    try {
+      await approveApplication(appId);
+      // Update local state
+      setJobApplications(prev =>
+        prev.map(a => a.id === appId ? { ...a, status: 'approved' } : a)
+      );
+      toast({ title: 'Thành công', description: 'Đã duyệt ứng viên' });
+    } catch (e) {
+      toast({ title: 'Lỗi', description: 'Không thể duyệt ứng viên', variant: 'destructive' });
+    }
+  };
+
+  const handleRejectApplication = async (appId: string) => {
+    try {
+      await rejectApplication(appId);
+      // Update local state
+      setJobApplications(prev =>
+        prev.map(a => a.id === appId ? { ...a, status: 'rejected' } : a)
+      );
+      toast({ title: 'Thành công', description: 'Đã từ chối ứng viên' });
+    } catch (e) {
+      toast({ title: 'Lỗi', description: 'Không thể từ chối ứng viên', variant: 'destructive' });
+    }
+  };
 
   if (loading) {
     return (
@@ -301,7 +333,7 @@ const EmployerDashboard = () => {
                 <Users className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">{jobApplications.length}</div>
+                <div className="text-2xl font-bold text-primary">{filteredApplications.length}</div>
               </CardContent>
             </Card>
           </div>
@@ -543,7 +575,7 @@ const EmployerDashboard = () => {
 
             {/* Ứng viên */}
             <TabsContent value="applications" className="space-y-4">
-              {jobApplications.length === 0 ? (
+              {filteredApplications.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -552,7 +584,7 @@ const EmployerDashboard = () => {
                 </Card>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
-                  {jobApplications.map(app => (
+                  {filteredApplications.map(app => (
                     <Card key={app.id}>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -604,7 +636,7 @@ const EmployerDashboard = () => {
                                 <Button
                                   size="icon"
                                   style={{ backgroundColor: '#16a34a', color: 'white', borderColor: '#16a34a' }}
-                                  onClick={() => approveApplication(app.id)}
+                                  onClick={() => handleApproveApplication(app.id)}
                                   title="Duyệt"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
@@ -614,7 +646,7 @@ const EmployerDashboard = () => {
                                 <Button
                                   size="icon"
                                   variant="destructive"
-                                  onClick={() => rejectApplication(app.id)}
+                                  onClick={() => handleRejectApplication(app.id)}
                                   title="Từ chối"
                                 >
                                   <XCircle className="h-4 w-4" />

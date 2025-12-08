@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { resolveWorkFormatLabel, resolveJobTypeLabel, badgeColorForKey } from '@/lib/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   MapPin, DollarSign, Briefcase, Clock, Building2,
@@ -62,6 +63,7 @@ const JobDetail = () => {
   const [useDefaultCV, setUseDefaultCV] = useState(true);
   const [customCV, setCustomCV] = useState<File | null>(null);
   const [uploadingCV, setUploadingCV] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [job, setJob] = useState<JobForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,6 +203,7 @@ const JobDetail = () => {
     if (!user || !job) return;
 
     setUploadingCV(true);
+    setApplying(true);
     try {
       // Determine which CV to use
       let cvUrl = user.cv;
@@ -243,7 +246,7 @@ const JobDetail = () => {
         return;
       }
 
-      applyToJob(String(job.id), {
+      const success = await applyToJob(String(job.id), {
         jobId: String(job.id),
         userId: user.id,
         userName: user.name || user.username || '',
@@ -252,12 +255,20 @@ const JobDetail = () => {
         coverLetter: '',
       });
 
-      toast({
-        title: "Ứng tuyển thành công!",
-        description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
-      });
+      if (success) {
+        toast({
+          title: "Ứng tuyển thành công!",
+          description: "Hồ sơ của bạn đã được gửi đến nhà tuyển dụng",
+        });
+        setHasApplied(true);
+      } else {
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể gửi đơn ứng tuyển. Vui lòng thử lại.',
+          variant: 'destructive',
+        });
+      }
 
-      setHasApplied(true);
       setShowApplyDialog(false);
       setCustomCV(null);
       setUseDefaultCV(true);
@@ -269,6 +280,7 @@ const JobDetail = () => {
       });
     } finally {
       setUploadingCV(false);
+      setApplying(false);
     }
   };
 
@@ -326,15 +338,24 @@ const JobDetail = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {(job.display_work_format || job.work_format) && (
-                      <Badge variant="default">
-                        <Briefcase className="h-3 w-3 mr-1" />
-                        {job.display_work_format || job.work_format}
-                      </Badge>
-                    )}
-                    {(job.display_job_type || job.job_type) && (
-                      <Badge variant="outline">{job.display_job_type || job.job_type}</Badge>
-                    )}
+                    {(() => {
+                      const wfLabel = resolveWorkFormatLabel(job);
+                      const jtLabel = resolveJobTypeLabel(job);
+                      const colorKey = job.work_format || job.job_type || '';
+                      return (
+                        <>
+                          {wfLabel && (
+                            <Badge className={badgeColorForKey(colorKey)}>
+                              <Briefcase className="h-3 w-3 mr-1" />
+                              {wfLabel}
+                            </Badge>
+                          )}
+                          {jtLabel && (
+                            <Badge variant="outline">{jtLabel}</Badge>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

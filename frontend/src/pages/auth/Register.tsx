@@ -62,8 +62,8 @@ const Register = () => {
   // Cho phép CHỈ chữ cái (mọi ngôn ngữ) và khoảng trắng – không số, không ký tự đặc biệt
   const NAME_REGEX = /^[\p{L}\s]+$/u;
 
-  // Chấp nhận các nhà cung cấp phổ biến (bạn có thể thêm/bớt domain ở đây)
-  const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@(demo\.com|gmail\.com|googlemail\.com|yahoo\.com|ymail\.com|outlook\.com|hotmail\.com|live\.com|msn\.com|icloud\.com|proton\.me|protonmail\.com)$/i;
+  // Simple, permissive email validation (no domain whitelist)
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
   // Điện thoại đúng 10 chữ số
   const PHONE_REGEX = /^\d{10}$/;

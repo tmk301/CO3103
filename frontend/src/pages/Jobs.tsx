@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { resolveWorkFormatLabel, resolveJobTypeLabel, badgeColorForKey } from '@/lib/badge';
 
 interface JobForm {
   id: number;
@@ -31,7 +32,9 @@ interface JobForm {
   display_salary_currency?: string;
   salary_currency_symbol?: string;
   work_format?: string;
+  display_work_format?: string;
   job_type?: string;
+  display_job_type?: string;
   status: 'pending' | 'approved' | 'rejected';
   is_active: boolean;
   created_at: string;
@@ -323,17 +326,13 @@ const Jobs = () => {
 
     // Salary filter
     const minSalary = salaryMin ? parseFloat(salaryMin) : null;
-    const maxSalary = salaryMax ? parseFloat(salaryMax) : null;
+
+    if (minSalary !== null) {
+      if (!job.salary_from || job.salary_from < minSalary) return false;
+    }
     
-    if (minSalary !== null || maxSalary !== null) {
-      // Only filter if currency matches (or currency is 'all')
-      if (currency !== 'all' && job.salary_currency !== currency) return false;
-      
-      const jobMin = job.salary_from || 0;
-      const jobMax = job.salary_to || job.salary_from || 0;
-      
-      if (minSalary !== null && jobMax < minSalary) return false;
-      if (maxSalary !== null && jobMin > maxSalary) return false;
+    if (currency !== 'all') {
+      if (job.salary_currency?.toLowerCase() !== currency.toLowerCase()) return false;
     }
 
     // Number of positions filter
@@ -530,16 +529,6 @@ const Jobs = () => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Mức lương tối đa</label>
-                    <Input
-                      type="number"
-                      placeholder="Không giới hạn"
-                      value={salaryMax}
-                      onChange={(e) => setSalaryMax(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
                     <label className="text-sm font-medium mb-2 block">Đơn vị tiền tệ</label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -613,15 +602,24 @@ const Jobs = () => {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                              {job.work_format && (
-                                <Badge className={getWorkFormatColor(job.work_format)}>
-                                  <Briefcase className="h-3 w-3 mr-1" />
-                                  {job.work_format}
-                                </Badge>
-                              )}
-                              {job.job_type && (
-                                <Badge variant="outline">{job.job_type}</Badge>
-                              )}
+                              {(() => {
+                                const wfLabel = resolveWorkFormatLabel(job);
+                                const jtLabel = resolveJobTypeLabel(job);
+                                const colorKey = job.work_format || job.job_type || '';
+                                return (
+                                  <>
+                                    {wfLabel && (
+                                      <Badge className={badgeColorForKey(colorKey)}>
+                                        <Briefcase className="h-3 w-3 mr-1" />
+                                        {wfLabel}
+                                      </Badge>
+                                    )}
+                                    {jtLabel && (
+                                      <Badge variant="outline">{jtLabel}</Badge>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>

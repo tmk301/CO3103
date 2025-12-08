@@ -12,6 +12,7 @@ from .views import (
     WardViewSet,
     FormViewSet,
     PendingLookupViewSet,
+    ApplicationViewSet,
 )
 
 router = DefaultRouter()
@@ -25,6 +26,7 @@ router.register(r'districts', DistrictViewSet, basename='district')
 router.register(r'wards', WardViewSet, basename='ward')
 router.register(r'forms', FormViewSet, basename='form')
 router.register(r'pending-lookups', PendingLookupViewSet, basename='pendinglookup')
+router.register(r'applications', ApplicationViewSet, basename='application')
 
 urlpatterns = [
     path('', include(router.urls)),

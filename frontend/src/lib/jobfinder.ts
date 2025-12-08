@@ -129,9 +129,48 @@ export async function listVerifiedCompanies() {
 }
 
 // Authenticated: apply to job
-// TODO: Backend endpoint not implemented yet, this will be enabled when ready
-export async function applyToJob(jobId: string, application: any): Promise<any> {
-  // Backend endpoint not available yet - skip API call
-  // return authPostJSON(`${API_BASE}/api/jobfinder/forms/${jobId}/apply/`, application);
-  return Promise.resolve({ success: true });
+export async function applyToJob(jobId: string, application: { cover_letter?: string; cv_url?: string }): Promise<any> {
+  return authPostJSON(`${API_BASE}/api/jobfinder/applications/`, {
+    form: parseInt(jobId),
+    cover_letter: application.cover_letter || '',
+    cv_url: application.cv_url || '',
+  });
+}
+
+// Application API functions
+export interface ApplicationResponse {
+  id: number;
+  form: number;
+  job_id: number;
+  job_title: string;
+  applicant: number;
+  applicant_id: number;
+  applicant_name: string;
+  applicant_email: string;
+  applicant_avatar: string | null;
+  cover_letter: string;
+  cv_url: string;
+  status: 'pending' | 'approved' | 'rejected';
+  applied_at: string;
+  updated_at: string;
+}
+
+export async function listMyApplications(): Promise<ApplicationResponse[]> {
+  return authGetJSON(`${API_BASE}/api/jobfinder/applications/`);
+}
+
+export async function listApplicationsForJob(jobId: string): Promise<ApplicationResponse[]> {
+  return authGetJSON(`${API_BASE}/api/jobfinder/applications/for-job/${jobId}/`);
+}
+
+export async function approveApplication(appId: string): Promise<ApplicationResponse> {
+  return authPostJSON(`${API_BASE}/api/jobfinder/applications/${appId}/approve/`, {});
+}
+
+export async function rejectApplication(appId: string): Promise<ApplicationResponse> {
+  return authPostJSON(`${API_BASE}/api/jobfinder/applications/${appId}/reject/`, {});
+}
+
+export async function withdrawApplication(appId: string): Promise<void> {
+  return authDeleteJSON(`${API_BASE}/api/jobfinder/applications/${appId}/`);
 }

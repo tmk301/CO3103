@@ -6,7 +6,7 @@ djangorestframework==3.16.1
 djangorestframework-simplejwt==5.5.1
 pillow==12.0.0
 python-dotenv==1.2.1
-
-# PostgreSQL driver (optional - only needed if using PostgreSQL)
-# Uncomment the line below if you're using PostgreSQL:
-# psycopg2-binary==2.9.11
+gunicorn==23.0.0
+whitenoise==6.8.2
+dj-database-url==2.3.0
+psycopg2-binary==2.9.11

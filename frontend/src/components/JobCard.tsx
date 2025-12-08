@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, DollarSign, Clock, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { resolveWorkFormatLabel, resolveJobTypeLabel, badgeColorForKey } from '@/lib/badge';
 
 interface JobCardProps {
   job: Job;
@@ -13,24 +14,11 @@ interface JobCardProps {
 const JobCard = ({ job }: JobCardProps) => {
   const navigate = useNavigate();
 
-  const getJobTypeColor = (type: string) => {
-    const colors = {
-      'full-time': 'bg-primary/10 text-primary',
-      'part-time': 'bg-warning/10 text-warning',
-      'hybrid': 'bg-accent/10 text-accent',
-      'remote': 'bg-success/10 text-success',
-    };
-    return colors[type as keyof typeof colors] || 'bg-muted text-muted-foreground';
-  };
+  const getJobTypeColor = (type: string) => badgeColorForKey(type);
 
   const getJobTypeLabel = (type: string) => {
-    const labels = {
-      'full-time': 'Full-time',
-      'part-time': 'Part-time',
-      'hybrid': 'Hybrid',
-      'remote': 'Remote',
-    };
-    return labels[type as keyof typeof labels] || type;
+    if (!type) return '';
+    return String(type).replace('-', ' ').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const formatDate = (date: string) => {
