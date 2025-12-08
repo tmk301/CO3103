@@ -60,7 +60,6 @@ Note: actual paths may vary if you change the `api` prefix in `main/urls.py`.
 #### 1. Initial Environment and Requirements:
 
 ```bash
-cd backend
 python backend/initial_venv.py
 ```
 
@@ -75,7 +74,7 @@ pip install -r requirements.txt
 ```
 
 #### 2. Setup .env file
-- Copy `.env.example` to `.env` and fill in the required environment variables.
+- Copy `.env.example` to `.env` and fill in the required environment variables (Or using default .env).
 - Make sure to set up Cloudinary credentials for media uploads (Default APIs are set).
 - Set up Django superuser credentials.
 - Configure database settings: if using PostgreSQL, provide the connection details. Else, default SQLite will be used.
@@ -83,25 +82,22 @@ pip install -r requirements.txt
 #### 3. Migrate Database and Create Superuser
 
 ```bash
-python make_and_migrate.py
-python create_superuser.py
+python backend/make_and_migrate.py
+python backend/load_fixtures.py
+python backend/create_superuser.py
 ```
 
 Or, manually:
 
 ```bash
+cd backend
 python manage.py makemigrations
 python manage.py migrate
+python load_fixtures.py
 python manage.py createsuperuser
 ```
 
-#### 4. Load Fixtures
-
-```bash
-python load_fixtures.py
-```
-
-#### 5. Run Development Server
+#### 4. Run Development Server
 
 ```bash
 python manage.py runserver
